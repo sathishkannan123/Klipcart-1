@@ -58,7 +58,7 @@
             <span class="material-symbols-outlined text-7xl text-white/40 absolute top-1/2 left-0 transform -translate-y-1/2 animate-moveBasket z-0">shopping_cart_checkout</span>
 
             <div class="relative z-10">
-                <a href="index.html" class="flex items-center gap-2 text-white mb-6 hover:scale-105 transition-transform w-max">
+                <a href="login.html" class="flex items-center gap-2 text-white mb-6 hover:scale-105 transition-transform w-max">
                     <span class="material-symbols-outlined text-4xl font-bold text-pink-400">shopping_cart_checkout</span>
                     <h1 class="text-3xl font-black tracking-tight">Klipcart</h1>
                 </a>
@@ -185,7 +185,7 @@
             <div class="mt-4 text-center">
                 <p class="text-[13px] font-bold text-slate-500">
                     Already have an account? 
-                    <a href="index.html" class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 hover:underline decoration-purple-500 underline-offset-4 ml-1">Login</a>
+                    <a href="login.html" class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 hover:underline decoration-purple-500 underline-offset-4 ml-1">Login</a>
                 </p>
             </div>
 
@@ -240,9 +240,9 @@
                 const resultMessage = await response.text();
 
                 if (response.ok && resultMessage === "Registration successful!") {
-                    // வெற்றி பெற்றால் Login பக்கத்திற்கு (index.html) அனுப்புகிறோம்
+                    // வெற்றி பெற்றால் Login பக்கத்திற்கு (login.html) அனுப்புகிறோம்
                     alert("🎉 Account Created Successfully! Please login.");
-                    window.location.href = "index.html"; 
+                    window.location.href = "login.html"; 
                 } else {
                     // Email ஏற்கனவே இருந்தால் அந்த எர்ரரைக் காட்டுகிறோம்
                     alert("❌ " + resultMessage);
