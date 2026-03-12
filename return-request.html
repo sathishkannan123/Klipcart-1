@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Request - Klipcart</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+    <header class="bg-white border-b border-slate-200 px-4 py-4 shadow-sm sticky top-0 z-50">
+        <div class="max-w-[800px] mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-600">assignment_return</span> Request Return
+            </h1>
+            <a href="your-orders.html" class="text-slate-500 hover:text-slate-900 font-bold text-sm flex items-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">close</span> Cancel
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-[800px] mx-auto w-full px-4 py-10">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-black text-slate-900 mb-2">Why are you returning this?</h2>
+            <p class="text-sm text-slate-500 font-medium mb-6">Order ID: <span id="displayOrderId" class="font-bold text-blue-600">Loading...</span></p>
+
+            <form onsubmit="submitReturn(event)" class="space-y-4">
+                
+                <label class="flex items-center gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="returnReason" value="Received wrong item" class="w-5 h-5 text-blue-600 accent-blue-600" onchange="toggleOther()" required>
+                    <span class="font-bold text-slate-700">Received wrong item</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="returnReason" value="Product damaged or defective" class="w-5 h-5 text-blue-600 accent-blue-600" onchange="toggleOther()">
+                    <span class="font-bold text-slate-700">Product damaged or defective</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="returnReason" value="Quality not as expected" class="w-5 h-5 text-blue-600 accent-blue-600" onchange="toggleOther()">
+                    <span class="font-bold text-slate-700">Quality not as expected</span>
+                </label>
+
+                <label class="flex items-center gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="returnReason" value="Other" id="reasonOther" class="w-5 h-5 text-blue-600 accent-blue-600" onchange="toggleOther()">
+                    <span class="font-bold text-slate-700">Others</span>
+                </label>
+
+                <div id="otherReasonBox" class="hidden pl-8 mt-2">
+                    <textarea id="otherReasonText" placeholder="Please specify the reason..." rows="3" class="w-full border border-slate-300 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"></textarea>
+                </div>
+
+                <div class="pt-6 border-t border-slate-100">
+                    <button type="submit" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg">
+                        Submit Return Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // URL-ல் இருந்து ஆர்டர் ஐடியை எடுப்பது
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('id') || "Unknown";
+        document.getElementById('displayOrderId').innerText = orderId;
+
+        // "Others" என்பதை செலக்ட் செய்தால் Text Box காட்டும்
+        function toggleOther() {
+            const isOther = document.getElementById('reasonOther').checked;
+            const otherBox = document.getElementById('otherReasonBox');
+            const otherText = document.getElementById('otherReasonText');
+            
+            if (isOther) {
+                otherBox.classList.remove('hidden');
+                otherText.setAttribute('required', 'true');
+            } else {
+                otherBox.classList.add('hidden');
+                otherText.removeAttribute('required');
+            }
+        }
+
+        // சப்மிட் செய்யும்போது
+        function submitReturn(event) {
+            event.preventDefault();
+            
+            let selectedReason = document.querySelector('input[name="returnReason"]:checked').value;
+            if(selectedReason === 'Other') {
+                selectedReason = document.getElementById('otherReasonText').value;
+            }
+
+            // LocalStorage-ல் ரிட்டர்ன் விவரங்களைச் சேமிக்கிறோம்
+            let returns = JSON.parse(localStorage.getItem('klipcart_returns')) || {};
+            returns[orderId] = selectedReason; // ஆர்டர் ஐடியுடன் காரணத்தை இணைக்கிறோம்
+            localStorage.setItem('klipcart_returns', JSON.stringify(returns));
+
+            alert("✅ Return request submitted successfully!");
+            window.location.href = 'your-orders.html'; // மீண்டும் ஆர்டர் பேஜுக்கு அனுப்புகிறோம்
+        }
+    </script>
+</body>
+</html>

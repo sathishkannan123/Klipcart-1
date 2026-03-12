@@ -1,0 +1,274 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Account - Klipcart</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+    <header class="bg-white border-b border-slate-200 px-6 md:px-10 py-4 shadow-sm sticky top-0 z-50">
+        <div class="max-w-[1200px] mx-auto flex items-center justify-between">
+            <a href="customer-home.html" class="flex items-center gap-2 text-blue-600">
+                <span class="material-symbols-outlined text-3xl font-bold">shopping_basket</span>
+                <h2 class="text-2xl font-black tracking-tight">Klipcart</h2>
+            </a>
+            <a href="customer-home.html" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition flex items-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span> Back to Home
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-[1200px] mx-auto w-full px-4 py-10 flex-grow flex flex-col md:flex-row gap-8">
+        
+        <aside class="w-full md:w-80 shrink-0">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-24">
+                <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                    <span class="material-symbols-outlined text-blue-600">manage_accounts</span> My Account
+                </h2>
+
+                <ul class="space-y-2">
+                    <li id="nav-info" onclick="showSection('info')" class="nav-item cursor-pointer flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-colors bg-blue-50 text-blue-600">
+                        <span class="material-symbols-outlined text-[20px]">person</span> Profile Information
+                    </li>
+                    <li id="nav-edit" onclick="showSection('edit')" class="nav-item cursor-pointer flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">edit_square</span> Edit Profile
+                    </li>
+                    <li id="nav-password" onclick="showSection('password')" class="nav-item cursor-pointer flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">lock_reset</span> Change Password
+                    </li>
+                    <li onclick="logout()" class="cursor-pointer flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-500 hover:bg-red-50 transition-colors mt-4 border border-transparent hover:border-red-100">
+                        <span class="material-symbols-outlined text-[20px]">logout</span> Logout
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <div class="flex-1">
+            
+            <div id="infoSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-10 transition-all">
+                <h2 class="text-2xl font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4">Personal Details</h2>
+                
+                <div class="flex flex-col md:flex-row items-center gap-8 mb-10 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <div class="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0">
+                        <span class="material-symbols-outlined text-5xl">account_circle</span>
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h2 id="displayName" class="text-2xl font-black text-slate-900 mb-1">Loading...</h2>
+                        <p id="displayEmail" class="text-slate-500 font-medium flex items-center justify-center md:justify-start gap-1">
+                            <span class="material-symbols-outlined text-[16px]">mail</span> loading@email.com
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">call</span> Phone Number</p>
+                        <p id="displayPhone" class="text-lg font-bold text-slate-900">-</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">location_on</span> Delivery Address</p>
+                        <p id="displayAddress" class="text-md font-medium text-slate-700 leading-relaxed">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="editSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-10 hidden transition-all">
+                <h2 class="text-2xl font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4">Update Profile</h2>
+
+                <div class="space-y-6 max-w-2xl">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Full Name</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-3.5 text-slate-400">person</span>
+                                <input id="name" type="text" placeholder="John Doe" class="w-full border border-slate-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50 focus:bg-white text-sm transition-all">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Phone Number</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-3.5 text-slate-400">call</span>
+                                <input id="phone" type="text" placeholder="9876543210" class="w-full border border-slate-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50 focus:bg-white text-sm transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Shipping Address</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-3.5 text-slate-400">location_on</span>
+                            <textarea id="address" placeholder="Enter your full address..." class="w-full border border-slate-300 rounded-xl pl-10 pr-4 py-3 h-28 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50 focus:bg-white text-sm transition-all resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <button onclick="saveProfile()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">save</span> Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <div id="passwordSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-10 hidden transition-all">
+                <h2 class="text-2xl font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4">Security Settings</h2>
+
+                <div class="space-y-6 max-w-md">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Current Password</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-3.5 text-slate-400">lock</span>
+                            <input type="password" id="oldPassword" placeholder="Enter old password" class="w-full border border-slate-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50 focus:bg-white text-sm transition-all">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">New Password</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-3.5 text-slate-400">key</span>
+                            <input type="password" id="newPassword" placeholder="Create new password" class="w-full border border-slate-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50 focus:bg-white text-sm transition-all">
+                        </div>
+                    </div>
+
+                    <button onclick="changePassword()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-4">
+                        <span class="material-symbols-outlined text-[20px]">lock_reset</span> Update Password
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Temporary email for testing if localStorage is empty
+        let email = localStorage.getItem("customerEmail");
+        if(!email) {
+            email = "guest@klipcart.com"; // Default for testing UI
+            document.getElementById("displayEmail").innerText = email;
+        }
+
+        window.onload = function() {
+            fetchProfile();
+        };
+
+        // 🌟 Handle Sidebar Active State & Section Toggle 🌟
+        function showSection(section) {
+            // Hide all sections
+            document.getElementById("infoSection").classList.add("hidden");
+            document.getElementById("editSection").classList.add("hidden");
+            document.getElementById("passwordSection").classList.add("hidden");
+
+            // Reset all nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('bg-blue-50', 'text-blue-600', 'font-bold');
+                item.classList.add('text-slate-600', 'font-medium', 'hover:bg-slate-50', 'hover:text-slate-900');
+            });
+
+            // Show target section & highlight nav item
+            document.getElementById(section + "Section").classList.remove("hidden");
+            
+            const activeNav = document.getElementById("nav-" + section);
+            activeNav.classList.remove('text-slate-600', 'font-medium', 'hover:bg-slate-50', 'hover:text-slate-900');
+            activeNav.classList.add('bg-blue-50', 'text-blue-600', 'font-bold');
+        }
+
+        function fetchProfile() {
+            fetch(`https://klipcart.onrender.com/api/profile/${email}`)
+            .then(res => {
+                if(!res.ok) throw new Error("Profile not found");
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById("displayName").innerText = data.fullName || "User";
+                document.getElementById("displayEmail").innerHTML = `<span class="material-symbols-outlined text-[16px]">mail</span> ${data.email}`;
+                document.getElementById("displayPhone").innerText = data.phone || "Not provided";
+                document.getElementById("displayAddress").innerText = data.address || "Not provided";
+
+                document.getElementById("name").value = data.fullName || "";
+                document.getElementById("phone").value = data.phone || "";
+                document.getElementById("address").value = data.address || "";
+            })
+            .catch(err => {
+                console.error("Error fetching profile:", err);
+                document.getElementById("displayName").innerText = "Guest User";
+            });
+        }
+
+        function saveProfile() {
+            fetch(`https://klipcart.onrender.com/api/profile/update/${email}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    fullName: document.getElementById("name").value,
+                    phone: document.getElementById("phone").value,
+                    address: document.getElementById("address").value
+                })
+            })
+            .then(async res => {
+                const msg = await res.text();
+                if(res.ok) {
+                    alert("✅ " + msg);
+                    location.reload();
+                } else {
+                    alert("❌ Error: " + msg);
+                }
+            })
+            .catch(err => {
+                console.error("Error updating profile:", err);
+                alert("Backend Server Error!");
+            });
+        }
+
+        function changePassword() {
+            const oldPass = document.getElementById("oldPassword").value;
+            const newPass = document.getElementById("newPassword").value;
+
+            if(!oldPass || !newPass) {
+                alert("Please fill in both password fields.");
+                return;
+            }
+
+            // புதிய பாஸ்வேர்ட் குறைந்தது 6 எழுத்துக்களாவது இருக்க வேண்டும் என்று செக் செய்வது நல்லது
+            if(newPass.length < 6) {
+                alert("New password must be at least 6 characters long.");
+                return;
+            }
+
+            fetch(`https://klipcart.onrender.com/api/profile/change-password/${email}?oldPassword=${oldPass}&newPassword=${newPass}`, {
+                method: "PUT"
+            })
+            .then(async res => {
+                const msg = await res.text();
+                if(res.ok) {
+                    alert("✅ " + msg);
+                    document.getElementById("oldPassword").value = "";
+                    document.getElementById("newPassword").value = "";
+                } else {
+                    alert("❌ " + msg); // Backend-ல் இருந்து வரும் "Incorrect old password" எர்ரரை காட்டும்
+                }
+            })
+            .catch(err => {
+                console.error("Error changing password:", err);
+                alert("❌ Error connecting to the server!");
+            });
+        }
+
+        function logout(){
+            localStorage.clear();
+            localStorage.removeItem("klipcart_cart");
+            localStorage.removeItem("klipcart_wishlist");
+            window.location.href="customer-home.html"; // Redirect to your home page
+        }
+    </script>
+</body>
+</html>

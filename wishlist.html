@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wishlist - Klipcart</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+    <header class="bg-white border-b border-slate-200 px-4 md:px-10 py-4 shadow-sm sticky top-0 z-50">
+        <div class="max-w-[1200px] mx-auto flex items-center justify-between">
+            <a href="customer-home.html" class="flex items-center gap-2 text-blue-600 hover:scale-105 transition-transform">
+                <span class="material-symbols-outlined text-3xl font-bold">shopping_basket</span>
+                <h2 class="text-2xl font-black tracking-tight hidden sm:block">Klipcart</h2>
+            </a>
+
+            <div class="flex items-center gap-5 md:gap-6">
+                <a href="wishlist.html" class="relative text-pink-500 flex flex-col items-center group">
+                    <span class="material-symbols-outlined text-[26px] md:text-[28px] group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 1;">favorite</span>
+                    <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm" id="navWishlistBadge">0</span>
+                </a>
+                
+                <a href="cart.html" class="relative text-slate-500 hover:text-blue-600 transition-colors flex flex-col items-center group">
+                    <span class="material-symbols-outlined text-[26px] md:text-[28px] group-hover:scale-110 transition-transform">shopping_cart</span>
+                    <span class="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-bold w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm" id="navCartBadge">0</span>
+                </a>
+
+                <a href="profile.html" class="text-slate-500 hover:text-blue-600 transition-colors flex flex-col items-center group">
+                    <span class="material-symbols-outlined text-[26px] md:text-[28px] group-hover:scale-110 transition-transform">account_circle</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1200px] mx-auto w-full px-4 py-8 flex-grow">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 flex items-center gap-2">
+                    My Wishlist <span class="material-symbols-outlined text-pink-500 text-3xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+                </h1>
+                <p class="text-slate-500 font-medium text-sm mt-1" id="wishlistCountText">Loading items...</p>
+            </div>
+            <a href="customer-home.html" class="inline-flex items-center justify-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-5 py-2.5 rounded-xl w-full sm:w-auto">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span> Continue Shopping
+            </a>
+        </div>
+
+        <div id="wishlistContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            </div>
+
+        <div id="emptyWishlist" class="hidden flex-col items-center justify-center py-20 px-4 bg-white rounded-3xl border border-slate-200 shadow-sm text-center">
+            <div class="w-24 h-24 bg-pink-50 text-pink-300 rounded-full flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-6xl">favorite_border</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Your wishlist is empty</h2>
+            <p class="text-slate-500 font-medium mb-8 max-w-sm mx-auto text-sm md:text-base">Looks like you haven't added anything to your wishlist yet. Explore our products and save your favorites!</p>
+            <a href="customer-home.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition-all flex items-center gap-2">
+                Start Shopping <span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+            </a>
+        </div>
+
+    </main>
+
+    <script>
+        // 🌟 1. லாகின் செய்த கஸ்டமரின் Email-ஐ எடுக்கிறோம் 🌟
+        const userEmail = localStorage.getItem("customerEmail");
+        const WISHLIST_KEY = userEmail ? "klipcart_wishlist_" + userEmail : "klipcart_wishlist";
+        const CART_KEY = userEmail ? "klipcart_cart_" + userEmail : "cart";
+
+        function loadWishlist() {
+            let wishlist = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
+            
+            const container = document.getElementById('wishlistContainer');
+            const emptyState = document.getElementById('emptyWishlist');
+            const countText = document.getElementById('wishlistCountText');
+            
+            countText.innerText = `${wishlist.length} item(s) saved`;
+            document.getElementById('navWishlistBadge').innerText = wishlist.length;
+            
+            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+            document.getElementById('navCartBadge').innerText = cart.length;
+
+            if (wishlist.length === 0) {
+                container.innerHTML = "";
+                container.classList.add("hidden");
+                emptyState.classList.remove("hidden");
+                emptyState.classList.add("flex");
+                return;
+            }
+
+            emptyState.classList.add("hidden");
+            emptyState.classList.remove("flex");
+            container.classList.remove("hidden");
+            container.innerHTML = "";
+
+            wishlist.forEach(product => {
+                const card = `
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group flex flex-col relative">
+                        
+                        <button onclick="removeFromWishlist(${product.id})" class="absolute top-3 right-3 z-10 w-8 h-8 bg-white/80 backdrop-blur-sm text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm transition-colors" title="Remove">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+
+                        <div class="w-full h-48 bg-slate-50 p-4 flex items-center justify-center border-b border-slate-100">
+                            <img src="${product.imageUrl.startsWith('http') ? product.imageUrl : 'https://klipcart.onrender.com/' + product.imageUrl}" 
+                                 onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400'" 
+                                 class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
+                        </div>
+
+                        <div class="p-5 flex-1 flex flex-col">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${product.category}</p>
+                            <h3 class="font-bold text-slate-900 text-sm md:text-base leading-tight mb-2 line-clamp-2">${product.name}</h3>
+                            <div class="mt-auto">
+                                <p class="text-lg font-black text-slate-900 mb-4">₹${product.price.toLocaleString('en-IN')}</p>
+                                
+                                <button onclick="moveToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${product.category}', '${product.imageUrl}')" 
+                                        class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm shadow-md">
+                                    <span class="material-symbols-outlined text-[18px]">shopping_cart</span> Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        function removeFromWishlist(id) {
+            let wishlist = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
+            wishlist = wishlist.filter(item => item.id !== id);
+            localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
+            loadWishlist();
+        }
+
+        function moveToCart(id, name, price, category, imageUrl) {
+            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+            const existingItem = cart.find(item => item.id === id);
+            
+            if (existingItem) {
+                existingItem.qty = (existingItem.qty || 1) + 1;
+            } else {
+                cart.push({ id, name, cartPrice: price, category, imageUrl, qty: 1 });
+            }
+            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+
+            removeFromWishlist(id);
+            alert(`🛒 ${name} added to your cart!`);
+            loadWishlist();
+        }
+
+        window.onload = loadWishlist;
+    </script>
+</body>
+</html>

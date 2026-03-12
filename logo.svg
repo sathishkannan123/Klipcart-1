@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <defs>
+        <linearGradient id="bagGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2444fb" /> 
+            <stop offset="100%" stop-color="#2444fb" /> 
+        </linearGradient>
+        
+        <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2444fb" /> 
+            <stop offset="100%" stop-color="#2444fb" /> 
+        </linearGradient>
+        
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="15" stdDeviation="15" flood-color="#ec4899" flood-opacity="0.4"/>
+        </filter>
+    </defs>
+
+    <rect width="512" height="512" rx="112" fill="#ffd000" />
+
+    <path d="M 196 220 L 196 140 C 196 90 316 90 316 140 L 316 220" fill="none" stroke="url(#handleGrad)" stroke-width="44" stroke-linecap="round" />
+
+    <path d="M 110 200 L 402 200 C 424 200 438 220 432 240 L 392 390 C 386 415 368 430 342 430 L 170 430 C 144 430 126 415 120 390 L 80 240 C 74 220 88 200 110 200 Z" fill="url(#bagGrad)" filter="url(#shadow)"/>
+
+    <line x1="216" y1="260" x2="216" y2="370" stroke="#ffffff" stroke-width="38" stroke-linecap="round"/>
+    <polyline points="306,260 226,315 306,370" fill="none" stroke="#ffffff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <path d="M 400 100 Q 400 140 440 140 Q 400 140 400 180 Q 400 140 360 140 Q 400 140 400 100 Z" fill="#0683e9" />
+    <path d="M 100 140 Q 100 160 120 160 Q 100 160 100 180 Q 100 160 80 160 Q 100 160 100 140 Z" fill="#160aff"  />
+</svg>

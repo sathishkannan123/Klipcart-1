@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klipcart - Premium Online Shopping</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .hero-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center gap-4">
+                
+                <a href="customer-home.html" class="flex items-center gap-2 text-blue-600 hover:scale-105 transition-transform shrink-0">
+                    <span class="material-symbols-outlined text-3xl font-bold">shopping_basket</span>
+                    <h2 class="text-2xl font-black tracking-tight hidden sm:block text-slate-900">Klipcart</h2>
+                </a>
+
+                <div class="hidden md:block flex-1 max-w-2xl mx-4 relative group">
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search for products, categories..." 
+                           class="w-full pl-11 pr-4 py-2.5 rounded-xl border-2 border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none bg-slate-50 focus:bg-white text-sm text-slate-900 font-medium">
+                    <span class="material-symbols-outlined text-[20px] text-slate-400 absolute left-4 top-2.5 transition-colors group-focus-within:text-blue-600">search</span>
+                </div>
+
+                <div class="flex items-center gap-5 sm:gap-6 shrink-0">
+                    
+                    <a href="wishlist.html" class="relative text-slate-500 hover:text-pink-500 transition-colors flex flex-col items-center group">
+                        <span class="material-symbols-outlined text-[26px] md:text-[28px] group-hover:scale-110 transition-transform">favorite</span>
+                        <span class="absolute -top-1.5 -right-1.5 bg-pink-500 text-white text-[10px] font-bold w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm" id="navWishlistBadge">0</span>
+                    </a>
+                    
+                    <button onclick="window.location.href='cart.html'" class="relative text-slate-500 hover:text-blue-600 transition-colors flex flex-col items-center group focus:outline-none">
+                        <span class="material-symbols-outlined text-[26px] md:text-[28px] group-hover:scale-110 transition-transform">shopping_cart</span>
+                        <span id="cartCount" class="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-bold w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">0</span>
+                    </button>
+
+                    <div class="relative z-50">
+                        <button onclick="toggleDropdown()" class="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors group focus:outline-none">
+                            <span id="profileIcon" class="material-symbols-outlined text-[26px] md:text-[28px] group-hover:scale-110 transition-transform hidden">account_circle</span>
+                            <span id="accountText" class="hidden sm:block font-bold text-sm">Account</span>
+                        </button>
+
+                        <div id="accountDropdown" class="hidden absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 py-3 transform transition-all origin-top-right">
+                            
+                            <div id="guestMenu">
+                                <a href="index.html" class="block px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-[18px]">login</span> Login / Signup
+                                </a>
+                            </div>
+                            
+                            <div id="userMenu" class="hidden">
+                                <div class="px-5 py-2 mb-1 border-b border-slate-50 bg-slate-50/50">
+                                    <span id="welcomeUser" class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Welcome</span>
+                                    <span class="block text-sm font-black text-slate-900 truncate" id="displayNameMenu">User Name</span>
+                                </div>
+                                <a href="profile.html" class="block px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-3 mt-1">
+                                    <span class="material-symbols-outlined text-[18px]">person</span> My Profile
+                                </a>
+                                <a href="your-orders.html" class="block px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-[18px]">shopping_bag</span> My Orders
+                                </a>
+                                <div class="h-px bg-slate-100 my-1"></div>
+                                <button onclick="logout()" class="w-full text-left px-5 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-3 focus:outline-none">
+                                    <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="md:hidden pb-3">
+                <div class="relative group">
+                    <input type="text" id="mobileSearchInput" oninput="handleMobileSearch()" placeholder="Search products..." 
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none bg-slate-50 text-sm font-medium">
+                    <span class="material-symbols-outlined text-[20px] text-slate-400 absolute left-3 top-2.5">search</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-bg text-white py-12 lg:py-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 items-center gap-12">
+            <div>
+                <span class="inline-block py-1 px-3 rounded-full bg-blue-500 bg-opacity-30 text-blue-100 text-sm font-semibold tracking-wider mb-4 border border-blue-400">🔥 HOT DEALS</span>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">Mega Sale <br><span class="text-yellow-400">Up To 50% Off</span></h1>
+                <p class="mb-8 text-lg text-blue-100 opacity-90 max-w-lg">Upgrade your lifestyle with premium products at unbeatable prices. Fast delivery and best quality guaranteed.</p>
+                <button onclick="document.getElementById('productsSection').scrollIntoView({behavior: 'smooth'})" class="bg-yellow-400 text-gray-900 font-bold px-8 py-3.5 rounded-xl hover:bg-yellow-300 transition shadow-lg shadow-yellow-400/30 transform hover:-translate-y-1">
+                    Shop Now
+                </button>
+            </div>
+            <div class="hidden md:block">
+                <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=800&auto=format&fit=crop" class="rounded-2xl shadow-2xl transform rotate-2 hover:rotate-0 transition duration-500" alt="Shopping Deals"/>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 class="text-2xl font-extrabold text-gray-900 mb-6 flex items-center gap-2">Explore Categories</h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 lg:gap-6">
+            <div onclick="goToCategory('mobile')" class="cursor-pointer group bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="h-24 lg:h-32 w-full overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center mb-3">
+                    <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=400&auto=format&fit=crop" class="h-full object-cover group-hover:scale-110 transition duration-500">
+                </div>
+                <h3 class="text-center font-bold text-gray-800">Mobile</h3>
+            </div>
+            <div onclick="goToCategory('laptop')" class="cursor-pointer group bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="h-24 lg:h-32 w-full overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center mb-3">
+                    <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=400&auto=format&fit=crop" class="h-full object-cover group-hover:scale-110 transition duration-500">
+                </div>
+                <h3 class="text-center font-bold text-gray-800">Laptop</h3>
+            </div>
+            <div onclick="goToCategory('watch')" class="cursor-pointer group bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="h-24 lg:h-32 w-full overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center mb-3">
+                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop" class="h-full object-cover group-hover:scale-110 transition duration-500">
+                </div>
+                <h3 class="text-center font-bold text-gray-800">Watch</h3>
+            </div>
+            <div onclick="goToCategory('earphone')" class="cursor-pointer group bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="h-24 lg:h-32 w-full overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center mb-3">
+                    <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=400&auto=format&fit=crop" class="h-full object-cover group-hover:scale-110 transition duration-500">
+                </div>
+                <h3 class="text-center font-bold text-gray-800">Earphone</h3>
+            </div>
+            <div onclick="goToCategory('tv')" class="cursor-pointer group bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="h-24 lg:h-32 w-full overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center mb-3">
+                    <img src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=400&auto=format&fit=crop" class="h-full object-cover group-hover:scale-110 transition duration-500">
+                </div>
+                <h3 class="text-center font-bold text-gray-800">TV</h3>
+            </div>
+        </div>
+    </section>
+
+    <section id="productsSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16">
+        <div class="flex justify-between items-center mb-8">
+            <h2 id="sectionTitle" class="text-2xl font-extrabold text-gray-900">Featured Products</h2>
+        </div>
+
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            <div class="col-span-full flex justify-center py-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 border-t-transparent"></div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-white border-t border-slate-200 pt-16 pb-8 mt-auto">
+        <div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                
+                <div class="col-span-1 md:col-span-2">
+                    <a href="customer-home.html" class="flex items-center gap-2 text-blue-600 mb-4">
+                        <span class="material-symbols-outlined text-3xl font-bold">shopping_basket</span>
+                        <h2 class="text-2xl font-black tracking-tight text-slate-900">Klipcart</h2>
+                    </a>
+                    <p class="text-slate-500 font-medium text-sm max-w-sm mb-6 leading-relaxed">
+                        Your premium destination for modern shopping. Discover the best quality electronics, gadgets, and accessories with ultra-fast delivery.
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="text-slate-900 font-black mb-5 uppercase tracking-wider text-xs">Company</h3>
+                    <ul class="space-y-4">
+                        <li><a href="about-us.html" class="text-slate-500 hover:text-blue-600 font-bold text-sm transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">business</span> About Us</a></li>
+                        <li><a href="careers.html" class="text-slate-500 hover:text-blue-600 font-bold text-sm transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">work</span> Careers</a></li>
+                        <li><a href="privacy-policy.html" class="text-slate-500 hover:text-blue-600 font-bold text-sm transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">policy</span> Privacy Policy</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-slate-900 font-black mb-5 uppercase tracking-wider text-xs">Support</h3>
+                    <ul class="space-y-4">
+                        <li><a href="help-center.html" class="text-slate-500 hover:text-blue-600 font-bold text-sm transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">help</span> Help Center</a></li>
+                        <li><a href="#" class="text-slate-500 hover:text-blue-600 font-bold text-sm transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">assignment_return</span> Return Policy</a></li>
+                        <li><a href="your-orders.html" class="text-slate-500 hover:text-blue-600 font-bold text-sm transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">local_shipping</span> Track Order</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-slate-500 font-bold text-xs">© 2026 Klipcart Inc. All rights reserved.</p>
+                <div class="flex gap-4 text-slate-400">
+                    <span class="material-symbols-outlined hover:text-blue-600 cursor-pointer transition-colors">language</span>
+                    <span class="material-symbols-outlined hover:text-blue-600 cursor-pointer transition-colors">public</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
+        let allProducts = []; 
+
+        // 🌟 1. User Specific Keys Setup 🌟
+        const userEmail = localStorage.getItem("customerEmail");
+        const CART_KEY = userEmail ? "klipcart_cart_" + userEmail : "cart";
+        const WISHLIST_KEY = userEmail ? "klipcart_wishlist_" + userEmail : "klipcart_wishlist";
+
+        // 🌟 2. Update Badges Logic (Wishlist & Cart) 🌟
+        function updateBadges() {
+            const cartItems = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+            const wishlistItems = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
+            
+            const cartBadge = document.getElementById("cartCount");
+            const wishlistBadge = document.getElementById("navWishlistBadge");
+            
+            if(cartBadge) cartBadge.innerText = cartItems.length;
+            if(wishlistBadge) wishlistBadge.innerText = wishlistItems.length;
+        }
+
+        function goToCategory(categoryName) {
+            window.location.href = "products.html?category=" + categoryName;
+        }
+
+        // 🌟 3. Add to Cart Logic (User Specific) 🌟
+        function addToCart(product) {
+            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+            
+            const existingItem = cart.find(item => item.id === product.id);
+            if (existingItem) {
+                existingItem.qty = (existingItem.qty || 1) + 1;
+            } else {
+                let finalPrice = product.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
+                cart.push({ ...product, cartPrice: finalPrice, qty: 1 });
+            }
+            
+            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+            updateBadges();
+            alert(`✅ ${product.name} added to cart successfully!`);
+        }
+
+        // Load Products API
+        async function loadProducts(){
+            const grid = document.getElementById("productGrid");
+            try {
+                const response = await fetch(API_PRODUCTS);
+                allProducts = await response.json(); 
+                renderProducts(allProducts); 
+            } catch(e) {
+                grid.innerHTML = "<div class='col-span-full bg-red-50 text-red-500 p-6 rounded-xl border border-red-200 text-center font-bold'>Backend server is not running! ❌</div>";
+            }
+        }
+
+        // Render Products to Screen
+        function renderProducts(productsToRender) {
+            const grid = document.getElementById("productGrid");
+            grid.innerHTML = ""; 
+
+            if(productsToRender.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-16">
+                        <span class="material-symbols-outlined text-6xl text-gray-300 mb-4">search_off</span>
+                        <p class='text-gray-500 font-semibold'>No products found matching your search.</p>
+                    </div>`;
+                return;
+            }
+
+            productsToRender.forEach(p => {
+                const imgUrl = `https://klipcart.onrender.com/${p.imageUrl}`;
+                let priceHtml = `<p class="text-xl font-bold text-gray-900">₹${p.price.toLocaleString('en-IN')}</p>`;
+                let badgeHtml = '';
+                
+                if(p.salePrice && p.salePrice < p.price) {
+                    const discount = Math.round(((p.price - p.salePrice) / p.price) * 100);
+                    priceHtml = `
+                        <div class="flex flex-col">
+                            <span class="text-sm text-gray-400 line-through">₹${p.price.toLocaleString('en-IN')}</span>
+                            <span class="text-xl font-bold text-red-600">₹${p.salePrice.toLocaleString('en-IN')}</span>
+                        </div>
+                    `;
+                    badgeHtml = `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full z-10 shadow-sm">${discount}% OFF</span>`;
+                }
+
+                grid.innerHTML += `
+                    <div onclick="window.location.href='product-details.html?id=${p.id}'" class="cursor-pointer group bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col relative">
+                        <div class="relative h-56 w-full overflow-hidden bg-gray-50 flex items-center justify-center p-4">
+                            ${badgeHtml}
+                            <img src="${imgUrl}" onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?q=80&w=400&auto=format&fit=crop'" class="max-h-full max-w-full object-contain transform group-hover:scale-110 transition-transform duration-500 ease-in-out mix-blend-multiply">
+                        </div>
+                        <div class="p-5 flex flex-col flex-grow border-t border-gray-50">
+                            <span class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">${p.category}</span>
+                            <h3 class="font-bold text-gray-800 text-lg leading-tight mb-3 line-clamp-2">${p.name}</h3>
+                            <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                                ${priceHtml}
+                                <button onclick='event.stopPropagation(); addToCart(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="bg-slate-900 hover:bg-blue-600 text-white p-3 rounded-xl transition-colors duration-300 shadow-md transform active:scale-95">
+                                    <span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function handleSearch() {
+            const query = document.getElementById("searchInput").value.toLowerCase();
+            document.getElementById("mobileSearchInput").value = query;
+            filterAndScroll(query);
+        }
+
+        function handleMobileSearch() {
+            const query = document.getElementById("mobileSearchInput").value.toLowerCase();
+            document.getElementById("searchInput").value = query;
+            filterAndScroll(query);
+        }
+
+        function filterAndScroll(query) {
+            const filteredProducts = allProducts.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                p.category.toLowerCase().includes(query) ||
+                (p.tags && p.tags.toLowerCase().includes(query))
+            );
+            
+            document.getElementById("sectionTitle").innerText = query ? `Search Results for "${query}"` : "Featured Products";
+            renderProducts(filteredProducts);
+
+            if(query.length === 1) {
+                document.getElementById("productsSection").scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+
+        function updateAccountMenu() {
+            const name = localStorage.getItem("customerName");
+            if (name) {
+                document.getElementById("accountText").innerText = name;
+                document.getElementById("displayNameMenu").innerText = name;
+                document.getElementById("guestMenu").classList.add("hidden");
+                document.getElementById("userMenu").classList.remove("hidden");
+                document.getElementById("profileIcon").classList.remove("hidden");
+            } else {
+                document.getElementById("accountText").innerText = "Account";
+                document.getElementById("guestMenu").classList.remove("hidden");
+                document.getElementById("userMenu").classList.add("hidden");
+                document.getElementById("profileIcon").classList.remove("hidden");
+            }
+        }
+
+        function toggleDropdown() { document.getElementById("accountDropdown").classList.toggle("hidden"); }
+        
+        // 🌟 4. Logout Logic (User Specific) 🌟
+        function logout() { 
+            // லாகின் தகவல்களை மட்டுமே அழிக்கிறோம். 
+            // (கஸ்டமரின் தனிப்பட்ட Cart/Wishlist Data பிரவுசரில் பத்திரமாக இருக்கும், அவர்கள் மீண்டும் லாகின் செய்யும்போது வந்துவிடும்!)
+            localStorage.removeItem("customerEmail");
+            localStorage.removeItem("customerName");
+
+            alert("Logged out successfully!");
+            window.location.href = "customer-home.html"; 
+        }
+
+        document.addEventListener("click", function (event) {
+            const dropdown = document.getElementById("accountDropdown");
+            if (!event.target.closest(".relative")) { dropdown?.classList.add("hidden"); }
+        });
+
+        window.onload = function () {
+            updateAccountMenu();
+            updateBadges(); 
+            loadProducts();
+        };
+    </script>
+</body>
+</html>

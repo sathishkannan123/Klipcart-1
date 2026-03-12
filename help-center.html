@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center & Support - Klipcart</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .faq-answer { transition: all 0.3s ease-in-out; max-height: 0; overflow: hidden; opacity: 0; }
+        .faq-item.active .faq-answer { max-height: 200px; opacity: 1; margin-top: 10px; }
+        .faq-item.active .arrow { transform: rotate(180deg); }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen relative">
+
+    <header class="bg-white border-b border-slate-200 px-4 md:px-10 py-4 shadow-sm sticky top-0 z-40">
+        <div class="max-w-[1200px] mx-auto flex items-center justify-between">
+            <a href="customer-home.html" class="flex items-center gap-2 text-blue-600">
+                <span class="material-symbols-outlined text-3xl font-bold">shopping_basket</span>
+                <h2 class="text-2xl font-black tracking-tight">Klipcart</h2>
+            </a>
+            <a href="customer-home.html" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition-colors text-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span> Back
+            </a>
+        </div>
+    </header>
+
+    <section class="bg-slate-900 text-white py-16 text-center">
+        <h1 class="text-3xl md:text-4xl font-black mb-4">Hi, how can we help you?</h1>
+        <p class="text-slate-400 mb-8">Search our FAQ or use the Live Chat below to talk to us.</p>
+        <div class="relative max-w-xl mx-auto px-4">
+            <input type="text" id="helpSearch" onkeyup="filterFAQs()" placeholder="Search FAQs..." class="w-full pl-12 pr-4 py-4 rounded-xl text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/30">
+            <span class="material-symbols-outlined absolute left-8 top-4 text-slate-400 text-[28px]">search</span>
+        </div>
+    </section>
+
+    <section class="max-w-[800px] mx-auto px-4 py-12 flex-grow w-full">
+        <h2 class="text-2xl font-bold text-slate-900 mb-6">Frequently Asked Questions</h2>
+        <div id="faqContainer" class="space-y-4">
+            <div id="faqContainer" class="space-y-4">
+            
+            <div class="faq-item bg-white border border-slate-200 rounded-2xl p-5 cursor-pointer hover:border-blue-300 transition-colors" onclick="toggleFaq(this)">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-900 text-sm md:text-base faq-question">How do I track my Klipcart order?</h3>
+                    <span class="material-symbols-outlined text-slate-400 arrow transition-transform">expand_more</span>
+                </div>
+                <div class="faq-answer">
+                    <p class="text-sm text-slate-600 leading-relaxed">You can track your order by going to the <a href="your-orders.html" class="text-blue-600 font-bold hover:underline">Your Orders</a> page. Click on the specific order to see the real-time delivery status.</p>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white border border-slate-200 rounded-2xl p-5 cursor-pointer hover:border-blue-300 transition-colors" onclick="toggleFaq(this)">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-900 text-sm md:text-base faq-question">What is your return policy?</h3>
+                    <span class="material-symbols-outlined text-slate-400 arrow transition-transform">expand_more</span>
+                </div>
+                <div class="faq-answer">
+                    <p class="text-sm text-slate-600 leading-relaxed">We offer a 30-day hassle-free return policy. If you are not satisfied with your product, you can request a return from your orders page, provided the product is unused and in its original packaging.</p>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white border border-slate-200 rounded-2xl p-5 cursor-pointer hover:border-blue-300 transition-colors" onclick="toggleFaq(this)">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-900 text-sm md:text-base faq-question">How long does delivery take?</h3>
+                    <span class="material-symbols-outlined text-slate-400 arrow transition-transform">expand_more</span>
+                </div>
+                <div class="faq-answer">
+                    <p class="text-sm text-slate-600 leading-relaxed">Standard delivery takes 3-5 business days depending on your location. Metro cities usually receive orders within 24-48 hours via our express delivery network.</p>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white border border-slate-200 rounded-2xl p-5 cursor-pointer hover:border-blue-300 transition-colors" onclick="toggleFaq(this)">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-900 text-sm md:text-base faq-question">My payment failed but money was deducted. What should I do?</h3>
+                    <span class="material-symbols-outlined text-slate-400 arrow transition-transform">expand_more</span>
+                </div>
+                <div class="faq-answer">
+                    <p class="text-sm text-slate-600 leading-relaxed">Don't worry! If money was deducted for a failed transaction, it will be automatically refunded to your original payment method within 5-7 business days by your bank.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <button onclick="toggleChat()" class="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition-transform hover:scale-110 z-50">
+        <span class="material-symbols-outlined text-3xl" id="chatIcon">chat</span>
+    </button>
+
+    <div id="chatBox" class="fixed bottom-24 right-6 w-[340px] h-[450px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-slate-200 flex flex-col hidden z-50 overflow-hidden transform transition-all">
+        <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined">support_agent</span>
+                <div>
+                    <h3 class="font-bold leading-tight">Klipcart Support</h3>
+                    <p class="text-[10px] text-blue-200 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> Online</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="hover:text-blue-200"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        
+        <div id="chatMessages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-slate-50">
+            </div>
+
+        <div class="p-3 border-t border-slate-200 bg-white flex gap-2">
+            <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 bg-slate-100 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50" onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()" class="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700"><span class="material-symbols-outlined text-[20px]">send</span></button>
+        </div>
+    </div>
+
+    <script>
+        function toggleFaq(el) { el.classList.toggle('active'); }
+        function filterFAQs() {
+            let input = document.getElementById('helpSearch').value.toLowerCase();
+            document.querySelectorAll('.faq-item').forEach(item => {
+                let text = item.querySelector('.faq-question').innerText.toLowerCase();
+                item.style.display = text.includes(input) ? "block" : "none";
+            });
+        }
+
+        // 🌟 Live Chat Logic 🌟
+        const chatBox = document.getElementById('chatBox');
+        const chatIcon = document.getElementById('chatIcon');
+        const messagesDiv = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        
+        const customerEmail = localStorage.getItem("customerEmail");
+        const customerName = localStorage.getItem("customerName") || "Customer";
+
+        function toggleChat() {
+            if(!customerEmail) {
+                alert("Please login to use Live Chat!");
+                window.location.href = "login.html";
+                return;
+            }
+            chatBox.classList.toggle('hidden');
+            chatIcon.innerText = chatBox.classList.contains('hidden') ? 'chat' : 'keyboard_arrow_down';
+            if(!chatBox.classList.contains('hidden')) {
+                loadMessages();
+                scrollToBottom();
+            }
+        }
+
+        function loadMessages() {
+            if(!customerEmail) return;
+            let allChats = JSON.parse(localStorage.getItem("klipcart_chats")) || {};
+            let myChat = allChats[customerEmail] || [];
+            
+            messagesDiv.innerHTML = "";
+            if(myChat.length === 0) {
+                messagesDiv.innerHTML = `<p class="text-xs text-center text-slate-400 my-auto">Send a message to start chatting with Admin.</p>`;
+            }
+
+            myChat.forEach(msg => {
+                const isMe = msg.sender === 'customer';
+                messagesDiv.innerHTML += `
+                    <div class="max-w-[80%] ${isMe ? 'self-end bg-blue-600 text-white rounded-l-xl rounded-tr-xl' : 'self-start bg-white border border-slate-200 text-slate-800 rounded-r-xl rounded-tl-xl shadow-sm'} p-2.5 text-sm">
+                        ${msg.text}
+                        <p class="text-[9px] ${isMe ? 'text-blue-200 text-right' : 'text-slate-400 text-left'} mt-1">${msg.time}</p>
+                    </div>
+                `;
+            });
+            scrollToBottom();
+        }
+
+        function sendMessage() {
+            const text = chatInput.value.trim();
+            if(!text || !customerEmail) return;
+
+            let allChats = JSON.parse(localStorage.getItem("klipcart_chats")) || {};
+            if(!allChats[customerEmail]) allChats[customerEmail] = [];
+
+            const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            // Save Message
+            allChats[customerEmail].push({ sender: 'customer', text: text, time: timeString, name: customerName });
+            localStorage.setItem("klipcart_chats", JSON.stringify(allChats));
+            
+            // Update UI
+            chatInput.value = "";
+            loadMessages();
+        }
+
+        function scrollToBottom() { messagesDiv.scrollTop = messagesDiv.scrollHeight; }
+
+        // Poll for new messages every 2 seconds
+        setInterval(() => {
+            if(!chatBox.classList.contains('hidden')) loadMessages();
+        }, 2000);
+
+    </script>
+</body>
+</html>
