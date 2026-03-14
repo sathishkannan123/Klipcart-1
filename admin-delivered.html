@@ -91,8 +91,10 @@
     </main>
 
     <script>
-        const API_URL = "https://klipcart.onrender.com/api/orders";
+        const API_ORDERS = "https://klipcart.onrender.com/api/orders";
+        const API_RETURNS = "https://klipcart.onrender.com/api/returns";
 
+        // Helper to get initials for avatar
         function getInitials(name) {
             if(!name || name.trim() === '') return 'U';
             return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -100,18 +102,26 @@
 
         async function loadDeliveredOrders() {
             try {
-                const response = await fetch(API_URL);
-                const allOrders = await response.json();
+                // Fetch all Orders and all Returns from Database
+                const [resOrders, resReturns] = await Promise.all([
+                    fetch(API_ORDERS),
+                    fetch(`${API_RETURNS}/admin/all`)
+                ]);
+
+                if (!resOrders.ok) throw new Error("Failed to fetch orders");
+                
+                const allOrders = await resOrders.json();
+                let allReturns = [];
+                if (resReturns.ok) {
+                    allReturns = await resReturns.json();
+                }
+
                 const tbody = document.getElementById("deliveredTable");
                 tbody.innerHTML = "";
 
+                // Filter only DELIVERED orders
                 const deliveredOrders = allOrders.filter(order => order.status === 'DELIVERED');
                 
-                let localOrders = JSON.parse(localStorage.getItem('orders')) || [];
-                let returns = JSON.parse(localStorage.getItem('klipcart_returns')) || {}; 
-                let returnDates = JSON.parse(localStorage.getItem('klipcart_return_dates')) || {}; 
-                let refunds = JSON.parse(localStorage.getItem('klipcart_refunds')) || {}; 
-
                 if(deliveredOrders.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-500 font-medium"><span class="material-symbols-outlined text-5xl text-slate-300 mb-3 block">inbox</span>No delivered orders found yet.</td></tr>`;
                     return;
@@ -122,80 +132,80 @@
                     const cName = order.customerName || "Guest User";
                     const cEmail = order.customerEmail || "No Email Provided";
                     const cPhone = order.customerPhone || "No Phone Provided";
-                    
-                    const localMatch = localOrders.find(o => o.orderId === orderIdStr);
-                    const cAddress = order.address || (localMatch && localMatch.address ? localMatch.address : "Address details not available");
-                    
-                    // 🌟 Backend-ல் இருந்து Product Names-ஐ எடுக்கிறோம் 🌟
+                    const cAddress = order.address || "Address details not available";
                     const pNames = order.productNames || "Product details not available";
-
                     const initials = getInitials(cName);
-                    const returnReason = returns[orderIdStr]; 
-                    const scheduledDate = returnDates[orderIdStr]; 
-                    const isRefunded = refunds[orderIdStr]; 
-
-                    let statusBadge = "";
                     
-                    if(isRefunded) {
-                        statusBadge = `
-                            <span class="px-3 py-1.5 rounded-lg text-[11px] font-black border bg-purple-100 text-purple-700 border-purple-200 inline-flex items-center gap-1 w-max">
-                                <span class="material-symbols-outlined text-[14px]">verified</span> REFUND COMPLETED
-                            </span>
-                            <p class="text-xs text-slate-400 mt-1 font-medium">Order closed.</p>
-                        `;
-                    } 
-                    else if(returnReason) {
-                        let dateActionHtml = "";
-                        if(scheduledDate) {
-                            const formattedDate = new Date(scheduledDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                            dateActionHtml = `
-                                <div class="mt-2 flex flex-col gap-2">
-                                    <div class="text-xs font-bold text-blue-700 bg-blue-100 p-1.5 rounded-lg flex items-center gap-1 border border-blue-200 w-max">
-                                        <span class="material-symbols-outlined text-[14px]">event_available</span> Pickup: ${formattedDate}
-                                    </div>
-                                    <button onclick="confirmRefund('${orderIdStr}')" class="bg-green-600 text-white text-xs px-3 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-1 w-max">
-                                        <span class="material-symbols-outlined text-[14px]">payments</span> Mark as Refunded
-                                    </button>
+                    // Check if this order has a return request in the database
+                    const returnRequest = allReturns.find(r => r.orderId === order.id.toString());
+                    let statusBadge = "";
+                    let actionHtml = "";
+
+                    if (returnRequest) {
+                        const retStatus = returnRequest.status;
+                        
+                        if (retStatus === "REFUNDED") {
+                            statusBadge = `
+                                <span class="px-3 py-1.5 rounded-lg text-[11px] font-black border bg-purple-100 text-purple-700 border-purple-200 inline-flex items-center gap-1 w-max">
+                                    <span class="material-symbols-outlined text-[14px]">verified</span> REFUND COMPLETED
+                                </span>
+                                <p class="text-xs text-slate-400 mt-1 font-medium">Order closed.</p>
+                            `;
+                        } else if (retStatus === "PICKUP_SCHEDULED") {
+                            statusBadge = `
+                                <div class="flex flex-col gap-1 w-full max-w-[280px]">
+                                    <span class="px-2 py-1 rounded-md text-[10px] font-black border bg-blue-100 text-blue-700 border-blue-200 inline-flex items-center gap-1 w-max mb-1">
+                                        <span class="material-symbols-outlined text-[12px]">local_shipping</span> PICKUP SCHEDULED
+                                    </span>
+                                    <span class="text-xs text-blue-600 font-bold whitespace-normal break-words leading-relaxed">
+                                        Reason: ${returnRequest.reason}
+                                    </span>
                                 </div>
+                            `;
+                            actionHtml = `
+                                <button onclick="updateReturnStatus(${returnRequest.id}, 'REFUNDED')" class="bg-green-600 text-white text-xs px-3 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center gap-1 w-full">
+                                    <span class="material-symbols-outlined text-[14px]">payments</span> Mark Refunded
+                                </button>
                             `;
                         } else {
-                            dateActionHtml = `
-                                <div class="mt-2 flex items-center gap-1">
-                                    <input type="date" id="date_${order.id}" class="text-xs border border-slate-300 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 text-slate-700">
-                                    <button onclick="savePickupDate('${orderIdStr}', 'date_${order.id}')" class="bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded-md font-bold hover:bg-blue-700 transition-colors shadow-sm">Set</button>
+                            // RETURN_REQUESTED
+                            statusBadge = `
+                                <div class="flex flex-col gap-1 w-full max-w-[280px]">
+                                    <span class="px-2 py-1 rounded-md text-[10px] font-black border bg-pink-100 text-pink-700 border-pink-200 inline-flex items-center gap-1 w-max mb-1">
+                                        <span class="material-symbols-outlined text-[12px]">assignment_return</span> RETURN REQUESTED
+                                    </span>
+                                    <span class="text-xs text-pink-600 font-bold whitespace-normal break-words leading-relaxed">
+                                        Reason: ${returnRequest.reason}
+                                    </span>
                                 </div>
                             `;
+                            actionHtml = `
+                                <button onclick="updateReturnStatus(${returnRequest.id}, 'PICKUP_SCHEDULED')" class="bg-blue-600 text-white text-xs px-3 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center gap-1 w-full">
+                                    <span class="material-symbols-outlined text-[14px]">event_available</span> Approve & Schedule
+                                </button>
+                            `;
                         }
-
-                        statusBadge = `
-                            <div class="flex flex-col gap-1 w-full max-w-[280px]">
-                                <span class="px-2 py-1 rounded-md text-[10px] font-black border bg-pink-100 text-pink-700 border-pink-200 inline-flex items-center gap-1 w-max mb-1">
-                                    <span class="material-symbols-outlined text-[12px]">assignment_return</span> RETURN REQUESTED
-                                </span>
-                                <span class="text-xs text-pink-600 font-bold whitespace-normal break-words leading-relaxed">
-                                    Reason: ${returnReason}
-                                </span>
-                                ${dateActionHtml}
-                            </div>`;
-                    } 
-                    else {
+                    } else {
                         statusBadge = `
                             <span class="px-3 py-1.5 rounded-full text-[11px] font-black border bg-green-100 text-green-800 border-green-200 inline-flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[14px]">check_circle</span> DELIVERED
                             </span>`;
+                        actionHtml = `
+                            <button onclick="deleteOrder(${order.id})" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="Delete Order">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        `;
                     }
 
                     const row = `
                         <tr class="hover:bg-slate-50 transition-colors group align-top">
-                            
                             <td class="p-4 pt-5 bg-slate-50 border-r border-slate-100">
-                                <span class="font-black text-slate-900 block w-max mb-2">#KLIP-${order.id}</span>
+                                <span class="font-black text-slate-900 block w-max mb-2">${orderIdStr}</span>
                                 <div class="text-[11px] font-bold text-blue-600 bg-blue-100/50 border border-blue-100 px-2 py-1.5 rounded-lg max-w-[180px] whitespace-normal break-words leading-relaxed" title="${pNames}">
                                     <span class="material-symbols-outlined text-[14px] align-middle mb-0.5">inventory_2</span> 
                                     ${pNames}
                                 </div>
                             </td>
-
                             <td class="p-4 flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center border border-blue-200 flex-shrink-0 mt-1">${initials}</div>
                                 <div>
@@ -210,42 +220,53 @@
                             <td class="p-4 font-black text-lg text-slate-900">₹${order.totalAmount.toLocaleString('en-IN')}</td>
                             <td class="p-4">${statusBadge}</td>
                             <td class="p-4 text-center">
-                                <button onclick="deleteOrder(${order.id})" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50"><span class="material-symbols-outlined">delete</span></button>
+                                ${actionHtml}
                             </td>
                         </tr>
                     `;
                     tbody.innerHTML += row;
                 });
-            } catch(e) { console.log(e); }
-        }
-
-        window.savePickupDate = function(orderId, inputId) {
-            const dateVal = document.getElementById(inputId).value;
-            if(!dateVal) { alert("Please select a date first!"); return; }
-            let returnDates = JSON.parse(localStorage.getItem('klipcart_return_dates')) || {};
-            returnDates[orderId] = dateVal; 
-            localStorage.setItem('klipcart_return_dates', JSON.stringify(returnDates));
-            alert(`✅ Pickup scheduled for ${orderId}`);
-            loadDeliveredOrders(); 
-        }
-
-        window.confirmRefund = function(orderId) {
-            if(confirm(`Have you picked up the item and processed the refund for ${orderId}?`)) {
-                let refunds = JSON.parse(localStorage.getItem('klipcart_refunds')) || {};
-                refunds[orderId] = true; 
-                localStorage.setItem('klipcart_refunds', JSON.stringify(refunds));
-                alert(`✅ Refund successfully marked for ${orderId}`);
-                loadDeliveredOrders(); 
+            } catch(e) { 
+                console.error("Error loading delivered orders:", e); 
             }
         }
 
+        // Update Return Status in Database
+        window.updateReturnStatus = async function(returnId, newStatus) {
+            let confirmMsg = newStatus === 'PICKUP_SCHEDULED' ? "Approve return and schedule pickup?" : "Confirm item received and process refund?";
+            
+            if(confirm(confirmMsg)) {
+                try {
+                    const response = await fetch(`${API_RETURNS}/admin/update/${returnId}?status=${newStatus}`, {
+                        method: 'PUT'
+                    });
+
+                    if(response.ok) {
+                        alert(`✅ Return status updated to ${newStatus}`);
+                        loadDeliveredOrders(); 
+                    } else {
+                        alert("❌ Failed to update return status.");
+                    }
+                } catch(error) {
+                    console.error("Error updating status:", error);
+                    alert("Backend server error.");
+                }
+            }
+        }
+
+        // Delete Order from Database
         async function deleteOrder(id) {
             if(confirm("Are you sure you want to delete this delivered order record?")) {
-                await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-                loadDeliveredOrders();
+                try {
+                    await fetch(`${API_ORDERS}/${id}`, { method: "DELETE" });
+                    loadDeliveredOrders();
+                } catch(e) {
+                    alert("Failed to delete order.");
+                }
             }
         }
-        // 🌟 Admin Logout Function 🌟
+
+        // Admin Logout
         function adminLogout() {
             if(confirm("Are you sure you want to log out?")) {
                 localStorage.removeItem("klipcart_admin_token");

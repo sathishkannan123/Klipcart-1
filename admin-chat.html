@@ -92,40 +92,63 @@
     </main>
 
     <script>
+        const API_CHAT = "https://klipcart.onrender.com/api/chat";
         let currentActiveEmail = null;
+        let globalChats = {}; // Store grouped chats
 
-        function loadChatList() {
-            const allChats = JSON.parse(localStorage.getItem("klipcart_chats")) || {};
-            const listDiv = document.getElementById("customerList");
-            listDiv.innerHTML = "";
-
-            const emails = Object.keys(allChats);
-            if(emails.length === 0) {
-                listDiv.innerHTML = `<p class="text-sm text-center text-slate-400 mt-10">No active support requests.</p>`;
-                return;
-            }
-
-            emails.forEach(email => {
-                const chatArr = allChats[email];
-                const lastMsg = chatArr[chatArr.length - 1];
-                const customerName = lastMsg.name || email.split('@')[0];
+        async function loadChatList() {
+            try {
+                const response = await fetch(`${API_CHAT}/admin/all`);
+                if (!response.ok) throw new Error("Failed to fetch chats");
                 
-                // Avatar Initials
-                const initials = customerName.substring(0,2).toUpperCase();
+                const allMessages = await response.json();
+                
+                // Group messages by customer email
+                globalChats = {};
+                allMessages.forEach(msg => {
+                    if (!globalChats[msg.customerEmail]) {
+                        globalChats[msg.customerEmail] = [];
+                    }
+                    globalChats[msg.customerEmail].push(msg);
+                });
 
-                listDiv.innerHTML += `
-                    <div onclick="openChat('${email}', '${customerName}')" class="p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:shadow-md hover:border-blue-300 transition-all flex items-center gap-3">
-                        <div class="w-10 h-10 bg-slate-100 text-slate-600 font-bold rounded-full flex items-center justify-center">${initials}</div>
-                        <div class="flex-1 overflow-hidden">
-                            <div class="flex justify-between items-center mb-1">
-                                <h4 class="font-bold text-sm text-slate-900 truncate">${customerName}</h4>
-                                <span class="text-[10px] text-slate-400">${lastMsg.time}</span>
+                const listDiv = document.getElementById("customerList");
+                listDiv.innerHTML = "";
+
+                const emails = Object.keys(globalChats);
+                if(emails.length === 0) {
+                    listDiv.innerHTML = `<p class="text-sm text-center text-slate-400 mt-10">No active support requests.</p>`;
+                    return;
+                }
+
+                emails.forEach(email => {
+                    const chatArr = globalChats[email];
+                    const lastMsg = chatArr[chatArr.length - 1];
+                    const cName = lastMsg.customerName || email.split('@')[0];
+                    const initials = cName.substring(0,2).toUpperCase();
+
+                    listDiv.innerHTML += `
+                        <div onclick="openChat('${email}', '${cName}')" class="p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:shadow-md hover:border-blue-300 transition-all flex items-center gap-3">
+                            <div class="w-10 h-10 bg-slate-100 text-slate-600 font-bold rounded-full flex items-center justify-center">${initials}</div>
+                            <div class="flex-1 overflow-hidden">
+                                <div class="flex justify-between items-center mb-1">
+                                    <h4 class="font-bold text-sm text-slate-900 truncate">${cName}</h4>
+                                    <span class="text-[10px] text-slate-400">${lastMsg.time}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 truncate">${lastMsg.text}</p>
                             </div>
-                            <p class="text-xs text-slate-500 truncate">${lastMsg.text}</p>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+
+                // If a chat is currently open, refresh its messages
+                if (currentActiveEmail) {
+                    loadAdminMessages();
+                }
+
+            } catch (error) {
+                console.error("Error loading chat list:", error);
+            }
         }
 
         function openChat(email, name) {
@@ -138,9 +161,9 @@
         }
 
         function loadAdminMessages() {
-            if(!currentActiveEmail) return;
-            const allChats = JSON.parse(localStorage.getItem("klipcart_chats")) || {};
-            const myChat = allChats[currentActiveEmail] || [];
+            if(!currentActiveEmail || !globalChats[currentActiveEmail]) return;
+            
+            const myChat = globalChats[currentActiveEmail];
             const msgDiv = document.getElementById("adminChatMessages");
             
             msgDiv.innerHTML = "";
@@ -156,21 +179,39 @@
             msgDiv.scrollTop = msgDiv.scrollHeight;
         }
 
-        function sendAdminMessage() {
+        async function sendAdminMessage() {
             const text = document.getElementById("adminInput").value.trim();
             if(!text || !currentActiveEmail) return;
 
-            let allChats = JSON.parse(localStorage.getItem("klipcart_chats")) || {};
             const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const customerNameStr = document.getElementById('activeCustomerName').innerText;
             
-            allChats[currentActiveEmail].push({ sender: 'admin', text: text, time: timeString });
-            localStorage.setItem("klipcart_chats", JSON.stringify(allChats));
-            
+            const messagePayload = {
+                customerEmail: currentActiveEmail,
+                customerName: customerNameStr,
+                sender: 'admin',
+                text: text,
+                time: timeString
+            };
+
             document.getElementById("adminInput").value = "";
-            loadAdminMessages();
-            loadChatList(); // Update sidebar last message
+
+            try {
+                const response = await fetch(`${API_CHAT}/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(messagePayload)
+                });
+
+                if (response.ok) {
+                    // Fetch list again to update UI
+                    loadChatList();
+                }
+            } catch (error) {
+                console.error("Error sending admin message:", error);
+            }
         }
-        // 🌟 Admin Logout Function 🌟
+
         function adminLogout() {
             if(confirm("Are you sure you want to log out?")) {
                 localStorage.removeItem("klipcart_admin_token");
@@ -179,12 +220,10 @@
             }
         }
 
-        // Auto Refresh
+        // Poll database every 3 seconds to get new messages
         setInterval(() => {
             loadChatList();
-            if(currentActiveEmail) loadAdminMessages();
-        }, 2000);
-
+        }, 3000);
 
         window.onload = loadChatList;
     </script>

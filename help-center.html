@@ -115,6 +115,9 @@
     </div>
 
     <script>
+        const API_CHAT = "https://klipcart.onrender.com/api/chat";
+
+        // FAQ Logic
         function toggleFaq(el) { el.classList.toggle('active'); }
         function filterFAQs() {
             let input = document.getElementById('helpSearch').value.toLowerCase();
@@ -124,7 +127,7 @@
             });
         }
 
-        // 🌟 Live Chat Logic 🌟
+        // Live Chat Logic
         const chatBox = document.getElementById('chatBox');
         const chatIcon = document.getElementById('chatIcon');
         const messagesDiv = document.getElementById('chatMessages');
@@ -143,56 +146,79 @@
             chatIcon.innerText = chatBox.classList.contains('hidden') ? 'chat' : 'keyboard_arrow_down';
             if(!chatBox.classList.contains('hidden')) {
                 loadMessages();
-                scrollToBottom();
             }
         }
 
-        function loadMessages() {
+        async function loadMessages() {
             if(!customerEmail) return;
-            let allChats = JSON.parse(localStorage.getItem("klipcart_chats")) || {};
-            let myChat = allChats[customerEmail] || [];
             
-            messagesDiv.innerHTML = "";
-            if(myChat.length === 0) {
-                messagesDiv.innerHTML = `<p class="text-xs text-center text-slate-400 my-auto">Send a message to start chatting with Admin.</p>`;
-            }
+            try {
+                const response = await fetch(`${API_CHAT}/${customerEmail}`);
+                if (response.ok) {
+                    const myChat = await response.json();
+                    
+                    messagesDiv.innerHTML = "";
+                    if(myChat.length === 0) {
+                        messagesDiv.innerHTML = `<p class="text-xs text-center text-slate-400 my-auto">Send a message to start chatting with Admin.</p>`;
+                        return;
+                    }
 
-            myChat.forEach(msg => {
-                const isMe = msg.sender === 'customer';
-                messagesDiv.innerHTML += `
-                    <div class="max-w-[80%] ${isMe ? 'self-end bg-blue-600 text-white rounded-l-xl rounded-tr-xl' : 'self-start bg-white border border-slate-200 text-slate-800 rounded-r-xl rounded-tl-xl shadow-sm'} p-2.5 text-sm">
-                        ${msg.text}
-                        <p class="text-[9px] ${isMe ? 'text-blue-200 text-right' : 'text-slate-400 text-left'} mt-1">${msg.time}</p>
-                    </div>
-                `;
-            });
-            scrollToBottom();
+                    myChat.forEach(msg => {
+                        const isMe = msg.sender === 'customer';
+                        messagesDiv.innerHTML += `
+                            <div class="max-w-[80%] ${isMe ? 'self-end bg-blue-600 text-white rounded-l-xl rounded-tr-xl' : 'self-start bg-white border border-slate-200 text-slate-800 rounded-r-xl rounded-tl-xl shadow-sm'} p-2.5 text-sm">
+                                ${msg.text}
+                                <p class="text-[9px] ${isMe ? 'text-blue-200 text-right' : 'text-slate-400 text-left'} mt-1">${msg.time}</p>
+                            </div>
+                        `;
+                    });
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error("Error loading chat:", error);
+            }
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const text = chatInput.value.trim();
             if(!text || !customerEmail) return;
 
-            let allChats = JSON.parse(localStorage.getItem("klipcart_chats")) || {};
-            if(!allChats[customerEmail]) allChats[customerEmail] = [];
-
             const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
-            // Save Message
-            allChats[customerEmail].push({ sender: 'customer', text: text, time: timeString, name: customerName });
-            localStorage.setItem("klipcart_chats", JSON.stringify(allChats));
+            const messagePayload = {
+                customerEmail: customerEmail,
+                customerName: customerName,
+                sender: 'customer',
+                text: text,
+                time: timeString
+            };
             
-            // Update UI
+            // Clear input immediately for better UX
             chatInput.value = "";
-            loadMessages();
+
+            try {
+                const response = await fetch(`${API_CHAT}/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(messagePayload)
+                });
+
+                if (response.ok) {
+                    loadMessages();
+                }
+            } catch (error) {
+                console.error("Error sending message:", error);
+            }
         }
 
-        function scrollToBottom() { messagesDiv.scrollTop = messagesDiv.scrollHeight; }
+        function scrollToBottom() { 
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; 
+        }
 
-        // Poll for new messages every 2 seconds
+        // Poll for new messages every 3 seconds if chat box is open
         setInterval(() => {
             if(!chatBox.classList.contains('hidden')) loadMessages();
-        }, 2000);
+        }, 3000);
 
     </script>
 </body>
