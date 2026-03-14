@@ -141,101 +141,116 @@
     </footer>
 
     <script>
-        const userEmail = localStorage.getItem("customerEmail");
-        const CART_KEY = userEmail ? "klipcart_cart_" + userEmail : "cart";
-        // 🌟 1. கஸ்டமரின் தனிப்பட்ட ஆர்டர் Key 🌟
-        const ORDERS_KEY = userEmail ? "klipcart_orders_" + userEmail : "orders";
+        const API_CART = "https://klipcart.onrender.com/api/cart";
+        const API_ORDERS = "https://klipcart.onrender.com/api/orders";
+        
+        const userId = localStorage.getItem("userId");
+        const customerEmail = localStorage.getItem("customerEmail");
+        const customerName = localStorage.getItem("customerName");
+
+        let currentCartItems = [];
+        let cartSubtotal = 0;
 
         async function loadCheckout() {
-            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            
-            if(cart.length === 0) {
-                alert("Your cart is empty!");
-                window.location.href = "index.html";
+            if (!userId) {
+                alert("Please login to proceed to checkout!");
+                window.location.href = "login.html";
                 return;
             }
 
-            let subtotal = 0;
-            cart.forEach(item => subtotal += item.cartPrice * (item.qty || 1));
+            try {
+                // Fetch Cart items from Database
+                const response = await fetch(`${API_CART}/${userId}`);
+                if (!response.ok) throw new Error("Failed to fetch cart");
+                
+                currentCartItems = await response.json();
 
-            document.getElementById('checkoutItemsCount').innerText = cart.length;
-            document.getElementById('checkoutSubtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
-            document.getElementById('checkoutTotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+                if (currentCartItems.length === 0) {
+                    alert("Your cart is empty!");
+                    window.location.href = "index.html";
+                    return;
+                }
 
-            if(userEmail) {
-                try {
-                    const res = await fetch(`https://klipcart.onrender.com/api/profile/${userEmail}`);
-                    if(res.ok) {
-                        const profileData = await res.json();
-                        if(profileData.fullName) document.getElementById('checkoutName').value = profileData.fullName;
-                        if(profileData.phone) document.getElementById('checkoutPhone').value = profileData.phone;
-                        if(profileData.address) document.getElementById('checkoutAddress').value = profileData.address;
-                    }
-                } catch(e) { console.error("Profile auto-fill failed"); }
-            } else {
-                document.getElementById('checkoutName').value = "Guest User";
+                cartSubtotal = 0;
+                currentCartItems.forEach(item => {
+                    const product = item.product;
+                    const finalPrice = product.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
+                    cartSubtotal += finalPrice * item.quantity;
+                });
+
+                // Update UI
+                document.getElementById('checkoutItemsCount').innerText = currentCartItems.length;
+                document.getElementById('checkoutSubtotal').innerText = `₹${cartSubtotal.toLocaleString('en-IN')}`;
+                document.getElementById('checkoutTotal').innerText = `₹${cartSubtotal.toLocaleString('en-IN')}`;
+
+                // Auto-fill Name
+                if (customerName) {
+                    document.getElementById('checkoutName').value = customerName;
+                }
+
+            } catch (error) {
+                console.error("Error loading checkout:", error);
+                alert("Failed to load cart details. Make sure backend is running.");
             }
         }
 
         async function placeOrder() {
-            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            if(cart.length === 0) return;
+            if (currentCartItems.length === 0) return;
 
-            let subtotal = 0;
-            // 🌟 Cart-ல் உள்ள பொருட்களின் பெயர்களையும், அளவையும் (Qty) பிரித்தெடுக்கிறோம் 🌟
-            let productNamesList = cart.map(item => `${item.name} (Qty: ${item.qty || 1})`).join(', ');
+            const nameInput = document.getElementById('checkoutName').value.trim();
+            const phoneInput = document.getElementById('checkoutPhone').value.trim();
+            const addressInput = document.getElementById('checkoutAddress').value.trim();
 
-            cart.forEach(item => subtotal += item.cartPrice * (item.qty || 1));
-
-            const customerName = document.getElementById('checkoutName').value || "Guest User";
-            const customerPhone = document.getElementById('checkoutPhone').value || "Not Provided";
-            const deliveryAddress = document.getElementById('checkoutAddress').value || "Not Provided";
-            const customerEmail = userEmail || "guest@klipcart.com"; 
-
-            if(!document.getElementById('checkoutName').value || !document.getElementById('checkoutPhone').value || !document.getElementById('checkoutAddress').value) {
+            if (!nameInput || !phoneInput || !addressInput) {
                 alert("Please fill in all the Shipping Details!");
                 return;
             }
 
-            // 🌟 Backend-க்கு அனுப்பும் Data-வில் productNames-ஐ சேர்க்கிறோம் 🌟
+            // Loading state for button
+            const btn = document.querySelector('button[onclick="placeOrder()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Processing...`;
+            btn.disabled = true;
+
+            // Generate product names list for the order
+            const productNamesList = currentCartItems.map(item => `${item.product.name} (Qty: ${item.quantity})`).join(', ');
+
             const orderData = {
-                customerName: customerName,
-                customerEmail: customerEmail,
-                customerPhone: customerPhone,
-                address: deliveryAddress,
-                totalAmount: subtotal,
-                productNames: productNamesList // <--- புதிதாகச் சேர்க்கப்பட்டது
+                customerName: nameInput,
+                customerEmail: customerEmail || "guest@klipcart.com",
+                customerPhone: phoneInput,
+                address: addressInput,
+                totalAmount: cartSubtotal,
+                productNames: productNamesList
             };
 
             try {
-                const response = await fetch("https://klipcart.onrender.com/api/orders", {
+                // 1. Save Order to Database
+                const response = await fetch(API_ORDERS, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(orderData)
                 });
 
-                if(response.ok) {
-                    const savedOrder = await response.json(); 
-                    
-                    let localOrders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-                    localOrders.unshift({
-                        orderId: "KLIP-" + savedOrder.id,
-                        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-                        items: cart,
-                        total: "₹" + subtotal.toLocaleString('en-IN'),
-                        status: savedOrder.status || "PENDING",
-                        address: deliveryAddress 
-                    });
-                    
-                    localStorage.setItem(ORDERS_KEY, JSON.stringify(localOrders));
-                    localStorage.removeItem(CART_KEY); 
-                    
+                if (response.ok) {
+                    // 2. Clear Cart from Database after successful order
+                    const deletePromises = currentCartItems.map(item => 
+                        fetch(`${API_CART}/remove/${item.id}`, { method: 'DELETE' })
+                    );
+                    await Promise.all(deletePromises);
+
+                    // Redirect to success page
                     window.location.href = "order-success.html"; 
                 } else {
                     alert("Failed to place order.");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
                 }
             } catch (error) {
+                console.error("Order placement error:", error);
                 alert("Backend Server is not running! Cannot place order.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 

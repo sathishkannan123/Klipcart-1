@@ -108,20 +108,39 @@
     </footer>
 
     <script>
+        const API_CART = "https://klipcart.onrender.com/api/cart";
+        const API_WISHLIST = "https://klipcart.onrender.com/api/wishlist";
+        const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
+        
         const params = new URLSearchParams(window.location.search);
         const category = params.get("category");
         
-        // 🌟 1. User Specific Keys Setup 🌟
-        const userEmail = localStorage.getItem("customerEmail");
-        const CART_KEY = userEmail ? "klipcart_cart_" + userEmail : "cart";
-        const WISHLIST_KEY = userEmail ? "klipcart_wishlist_" + userEmail : "klipcart_wishlist";
+        const userId = localStorage.getItem("userId");
 
-        // 🌟 Initialize Badges & Profile 🌟
-        function updateBadges() {
-            const cartItems = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            const wishlistItems = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
-            document.getElementById("navCartBadge").innerText = cartItems.length;
-            document.getElementById("navWishlistBadge").innerText = wishlistItems.length;
+        
+        let currentWishlist = [];
+
+        // 🌟 Initialize Badges (Database Integration) 🌟
+        async function updateBadges() {
+            if (!userId) return;
+
+            try {
+                // Cart Badge
+                const cartRes = await fetch(`${API_CART}/${userId}`);
+                if (cartRes.ok) {
+                    const cartItems = await cartRes.json();
+                    document.getElementById("navCartBadge").innerText = cartItems.length;
+                }
+
+                // Wishlist Badge & Data Storage
+                const wishRes = await fetch(`${API_WISHLIST}/${userId}`);
+                if (wishRes.ok) {
+                    currentWishlist = await wishRes.json();
+                    document.getElementById("navWishlistBadge").innerText = currentWishlist.length;
+                }
+            } catch (error) {
+                console.error("Error updating badges:", error);
+            }
         }
 
         function updateAccountMenu() {
@@ -143,6 +162,7 @@
         function logout() { 
             localStorage.removeItem("customerEmail");
             localStorage.removeItem("customerName");
+            localStorage.removeItem("userId"); 
             window.location.href = "index.html"; 
         }
 
@@ -151,48 +171,101 @@
             if (!event.target.closest(".relative")) { dropdown?.classList.add("hidden"); }
         });
 
-        // 🌟 Add to Cart / Wishlist Logic (User Specific) 🌟
-        function addToCart(id, name, price, salePrice, category, imageUrl) {
-            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            const existingItem = cart.find(item => item.id === id);
-            
-            let finalPrice = salePrice && salePrice < price ? salePrice : price;
-
-            if (existingItem) {
-                existingItem.qty = (existingItem.qty || 1) + 1;
-            } else {
-                cart.push({ id, name, cartPrice: finalPrice, category, imageUrl, qty: 1 });
+        // 🌟 Add to Cart Logic (Database Integration) 🌟
+        async function addToCart(productId, productName) {
+            if (!userId || userId === "null" || userId === "undefined") {
+                alert("⚠️ Please login to add items to your cart!");
+                window.location.href = "login.html";
+                return;
             }
-            
-            localStorage.setItem(CART_KEY, JSON.stringify(cart));
-            updateBadges();
-            alert(`🛒 ${name} added to your cart!`);
+
+            try {
+                const params = new URLSearchParams();
+                params.append("userId", userId);
+                params.append("productId", productId);
+                params.append("quantity", 1);
+
+                const response = await fetch(`${API_CART}/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+
+                if (response.ok) {
+                    alert(`🛒 ${productName} added to your cart!`);
+                    updateBadges(); 
+                } else {
+                    alert("❌ Failed to add product to cart.");
+                }
+            } catch (error) {
+                console.error("Error adding to cart:", error);
+                alert("❌ System Error! Make sure backend is running.");
+            }
         }
 
-        function toggleWishlist(btnElement, id, name, price, category, imageUrl) {
-            let wishlist = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
-            const index = wishlist.findIndex(item => item.id === id);
-            const icon = btnElement.querySelector('span');
-
-            if (index > -1) {
-                wishlist.splice(index, 1);
-                icon.classList.remove('text-pink-500');
-                icon.classList.add('text-slate-300');
-                icon.style.fontVariationSettings = "'FILL' 0";
-            } else {
-                wishlist.push({ id, name, price, category, imageUrl });
-                icon.classList.remove('text-slate-300');
-                icon.classList.add('text-pink-500');
-                icon.style.fontVariationSettings = "'FILL' 1";
+        // 🌟 Toggle Wishlist Logic (Database Integration) 🌟
+        async function toggleWishlist(btnElement, productId, productName) {
+            if (!userId || userId === "null" || userId === "undefined") {
+                alert("⚠️ Please login to add items to your wishlist!");
+                window.location.href = "login.html";
+                return;
             }
-            localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
-            updateBadges();
+
+            const icon = btnElement.querySelector('span');
+            const isFavourited = icon.classList.contains('text-pink-500');
+
+            try {
+                if (isFavourited) {
+
+                    const wishItem = currentWishlist.find(w => w.product.id === productId);
+                    if (wishItem) {
+                        const response = await fetch(`${API_WISHLIST}/remove/${wishItem.id}`, { method: 'DELETE' });
+                        if (response.ok) {
+                            icon.classList.remove('text-pink-500');
+                            icon.classList.add('text-slate-300', 'hover:text-pink-400');
+                            icon.style.fontVariationSettings = "'FILL' 0";
+                            
+                            
+                            currentWishlist = currentWishlist.filter(w => w.id !== wishItem.id);
+                            document.getElementById("navWishlistBadge").innerText = currentWishlist.length;
+                        }
+                    }
+                } else {
+                   
+                    const params = new URLSearchParams();
+                    params.append("userId", userId);
+                    params.append("productId", productId);
+
+                    const response = await fetch(`${API_WISHLIST}/add`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: params
+                    });
+
+                    if (response.ok) {
+                        const newItem = await response.json();
+                        icon.classList.remove('text-slate-300', 'hover:text-pink-400');
+                        icon.classList.add('text-pink-500');
+                        icon.style.fontVariationSettings = "'FILL' 1";
+                        
+                       
+                        currentWishlist.push(newItem);
+                        document.getElementById("navWishlistBadge").innerText = currentWishlist.length;
+                        alert(`❤️ ${productName} added to Wishlist!`);
+                    }
+                }
+            } catch (error) {
+                console.error("Error toggling wishlist:", error);
+                alert("❌ System Error! Make sure backend is running.");
+            }
         }
 
         // 🌟 Load Products 🌟
-        window.onload = function() {
+        window.onload = async function() {
             updateAccountMenu();
-            updateBadges();
+            
+            
+            await updateBadges();
 
             const titleEl = document.getElementById("categoryTitle");
             const iconEl = document.getElementById("categoryIcon");
@@ -224,11 +297,9 @@
                         return;
                     }
 
-                    // Wishlist Heart Icon Check (User Specific)
-                    let wishlist = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
-
                     data.forEach(product => {
-                        const isInWishlist = wishlist.some(item => item.id === product.id);
+                        
+                        const isInWishlist = currentWishlist.some(item => item.product.id === product.id);
                         const heartIconClass = isInWishlist ? "text-pink-500" : "text-slate-300 hover:text-pink-400";
                         const heartFill = isInWishlist ? "'FILL' 1" : "'FILL' 0";
 
@@ -249,15 +320,14 @@
                         container.innerHTML += `
                             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col relative h-full overflow-hidden">
                                 
-                                <button onclick="toggleWishlist(this, ${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${product.category}', '${product.imageUrl}')" 
+                                <button onclick="toggleWishlist(this, ${product.id}, '${product.name.replace(/'/g, "\\'")}')" 
                                         class="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm transition-transform active:scale-90">
                                     <span class="material-symbols-outlined text-[18px] transition-colors duration-300 ${heartIconClass}" style="font-variation-settings: ${heartFill};">favorite</span>
                                 </button>
 
                                 <div class="relative w-full h-52 bg-slate-50 flex items-center justify-center p-4 border-b border-slate-100 cursor-pointer" onclick="window.location.href='product-details.html?id=${product.id}'">
                                     ${badgeHtml}
-                                    <img src="${product.imageUrl.startsWith('http') ? product.imageUrl : 'https://klipcart.onrender.com/' + product.imageUrl}" 
-                                         onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400'" 
+                                    <img src="${product.imageUrl}" onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400'" 
                                          class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
                                 </div>
 
@@ -267,7 +337,7 @@
                                     
                                     <div class="flex items-end justify-between mt-auto pt-2 border-t border-slate-100">
                                         ${priceHtml}
-                                        <button onclick="event.stopPropagation(); addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, ${product.salePrice}, '${product.category}', '${product.imageUrl}')" 
+                                        <button onclick="event.stopPropagation(); addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}')" 
                                                 class="w-9 h-9 bg-slate-900 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md transition-colors transform active:scale-95" title="Add to Cart">
                                             <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                                         </button>
