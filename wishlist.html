@@ -69,91 +69,119 @@
 
     </main>
 
-    <script>
-        // 🌟 1. லாகின் செய்த கஸ்டமரின் Email-ஐ எடுக்கிறோம் 🌟
-        const userEmail = localStorage.getItem("customerEmail");
-        const WISHLIST_KEY = userEmail ? "klipcart_wishlist_" + userEmail : "klipcart_wishlist";
-        const CART_KEY = userEmail ? "klipcart_cart_" + userEmail : "cart";
+   <script>
+        const API_WISHLIST = "https://klipcart.onrender.com/api/wishlist";
+        const API_CART = "https://klipcart.onrender.com/api/cart";
+        const userId = localStorage.getItem("userId");
 
-        function loadWishlist() {
-            let wishlist = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
-            
-            const container = document.getElementById('wishlistContainer');
-            const emptyState = document.getElementById('emptyWishlist');
-            const countText = document.getElementById('wishlistCountText');
-            
-            countText.innerText = `${wishlist.length} item(s) saved`;
-            document.getElementById('navWishlistBadge').innerText = wishlist.length;
-            
-            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            document.getElementById('navCartBadge').innerText = cart.length;
-
-            if (wishlist.length === 0) {
-                container.innerHTML = "";
-                container.classList.add("hidden");
-                emptyState.classList.remove("hidden");
-                emptyState.classList.add("flex");
+        async function loadWishlist() {
+            if (!userId) {
+                window.location.href = "login.html";
                 return;
             }
 
-            emptyState.classList.add("hidden");
-            emptyState.classList.remove("flex");
-            container.classList.remove("hidden");
-            container.innerHTML = "";
+            try {
+                // 1. Wishlist-ஐ எடுக்கிறோம்
+                const resWishlist = await fetch(`${API_WISHLIST}/${userId}`);
+                const wishlistItems = await resWishlist.json();
 
-            wishlist.forEach(product => {
-                const card = `
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group flex flex-col relative">
-                        
-                        <button onclick="removeFromWishlist(${product.id})" class="absolute top-3 right-3 z-10 w-8 h-8 bg-white/80 backdrop-blur-sm text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm transition-colors" title="Remove">
-                            <span class="material-symbols-outlined text-[20px]">delete</span>
-                        </button>
+                // 2. Cart Count-ஐ எடுக்கிறோம் (Top Badge-க்காக)
+                const resCart = await fetch(`${API_CART}/${userId}`);
+                const cartItems = await resCart.json();
+                document.getElementById('navCartBadge').innerText = cartItems.length;
 
-                        <div class="w-full h-48 bg-slate-50 p-4 flex items-center justify-center border-b border-slate-100">
-                            <img src="${product.imageUrl.startsWith('http') ? product.imageUrl : 'https://klipcart.onrender.com/' + product.imageUrl}" 
-                                 onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400'" 
-                                 class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
-                        </div>
+                const container = document.getElementById('wishlistContainer');
+                const emptyState = document.getElementById('emptyWishlist');
+                const countText = document.getElementById('wishlistCountText');
+                
+                countText.innerText = `${wishlistItems.length} item(s) saved`;
+                document.getElementById('navWishlistBadge').innerText = wishlistItems.length;
 
-                        <div class="p-5 flex-1 flex flex-col">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${product.category}</p>
-                            <h3 class="font-bold text-slate-900 text-sm md:text-base leading-tight mb-2 line-clamp-2">${product.name}</h3>
-                            <div class="mt-auto">
-                                <p class="text-lg font-black text-slate-900 mb-4">₹${product.price.toLocaleString('en-IN')}</p>
-                                
-                                <button onclick="moveToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${product.category}', '${product.imageUrl}')" 
-                                        class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm shadow-md">
-                                    <span class="material-symbols-outlined text-[18px]">shopping_cart</span> Add to Cart
-                                </button>
+                if (wishlistItems.length === 0) {
+                    container.innerHTML = "";
+                    container.classList.add("hidden");
+                    emptyState.classList.remove("hidden");
+                    emptyState.classList.add("flex");
+                    return;
+                }
+
+                emptyState.classList.add("hidden");
+                emptyState.classList.remove("flex");
+                container.classList.remove("hidden");
+                container.innerHTML = "";
+
+                wishlistItems.forEach(item => {
+                    const product = item.product;
+                    const finalPrice = product.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
+
+                    const card = `
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group flex flex-col relative">
+                            
+                            <button onclick="removeFromWishlist(${item.id})" class="absolute top-3 right-3 z-10 w-8 h-8 bg-white/80 backdrop-blur-sm text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center shadow-sm transition-colors" title="Remove">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+
+                            <div class="w-full h-48 bg-slate-50 p-4 flex items-center justify-center border-b border-slate-100 cursor-pointer" onclick="window.location.href='product-details.html?id=${product.id}'">
+                                <img src="${product.imageUrl}" onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400'" class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
+                            </div>
+
+                            <div class="p-5 flex-1 flex flex-col">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${product.category}</p>
+                                <h3 class="font-bold text-slate-900 text-sm md:text-base leading-tight mb-2 line-clamp-2">${product.name}</h3>
+                                <div class="mt-auto">
+                                    <p class="text-lg font-black text-slate-900 mb-4">₹${finalPrice.toLocaleString('en-IN')}</p>
+                                    
+                                    <button onclick="moveToCart(${item.id}, ${product.id}, '${product.name.replace(/'/g, "\\'")}')" 
+                                            class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm shadow-md">
+                                        <span class="material-symbols-outlined text-[18px]">shopping_cart</span> Move to Cart
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
-                container.innerHTML += card;
-            });
-        }
-
-        function removeFromWishlist(id) {
-            let wishlist = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
-            wishlist = wishlist.filter(item => item.id !== id);
-            localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
-            loadWishlist();
-        }
-
-        function moveToCart(id, name, price, category, imageUrl) {
-            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            const existingItem = cart.find(item => item.id === id);
-            
-            if (existingItem) {
-                existingItem.qty = (existingItem.qty || 1) + 1;
-            } else {
-                cart.push({ id, name, cartPrice: price, category, imageUrl, qty: 1 });
+                    `;
+                    container.innerHTML += card;
+                });
+            } catch (error) {
+                console.error("Error loading wishlist:", error);
             }
-            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        }
 
-            removeFromWishlist(id);
-            alert(`🛒 ${name} added to your cart!`);
-            loadWishlist();
+        async function removeFromWishlist(wishlistId) {
+            try {
+                const response = await fetch(`${API_WISHLIST}/remove/${wishlistId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadWishlist();
+                }
+            } catch (error) {
+                console.error("Error removing from wishlist:", error);
+            }
+        }
+
+        async function moveToCart(wishlistId, productId, productName) {
+            try {
+                // 1. Cart-ல் சேர்ப்பது
+                const params = new URLSearchParams();
+                params.append("userId", userId);
+                params.append("productId", productId);
+                params.append("quantity", 1);
+
+                const response = await fetch(`${API_CART}/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+
+                if (response.ok) {
+                    // 2. Wishlist-ல் இருந்து நீக்குவது
+                    await fetch(`${API_WISHLIST}/remove/${wishlistId}`, { method: 'DELETE' });
+                    alert(`🛒 ${productName} moved to your cart!`);
+                    loadWishlist(); // Refresh screen
+                } else {
+                    alert("❌ Failed to move to cart.");
+                }
+            } catch (error) {
+                console.error("Error moving to cart:", error);
+            }
         }
 
         window.onload = loadWishlist;
