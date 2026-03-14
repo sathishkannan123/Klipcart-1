@@ -44,9 +44,10 @@
         </div>
     </footer>
 
-    <script>
+   <script>
         const API_ORDERS = "https://klipcart.onrender.com/api/orders";
         const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
+        const API_RETURNS = "https://klipcart.onrender.com/api/returns";
         const loggedInEmail = localStorage.getItem("customerEmail");
 
         async function loadMyOrders() {
@@ -59,15 +60,12 @@
             const container = document.getElementById('ordersContainer');
             container.innerHTML = `<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 border-t-transparent"></div></div>`;
 
-            let returns = JSON.parse(localStorage.getItem('klipcart_returns')) || {}; 
-            let returnDates = JSON.parse(localStorage.getItem('klipcart_return_dates')) || {}; 
-            let refunds = JSON.parse(localStorage.getItem('klipcart_refunds')) || {}; 
-
             try {
-                // Fetch Orders AND Products from the Database simultaneously
-                const [resOrders, resProducts] = await Promise.all([
+                // Fetch Orders, Products, and Returns from the Database simultaneously
+                const [resOrders, resProducts, resReturns] = await Promise.all([
                     fetch(API_ORDERS),
-                    fetch(API_PRODUCTS)
+                    fetch(API_PRODUCTS),
+                    fetch(`${API_RETURNS}/${loggedInEmail}`)
                 ]);
 
                 if (!resOrders.ok || !resProducts.ok) throw new Error("Failed to fetch data");
@@ -75,6 +73,14 @@
                 const allOrders = await resOrders.json();
                 const allProducts = await resProducts.json();
                 
+                let myReturns = [];
+                if (resReturns.ok) {
+                    myReturns = await resReturns.json();
+                }
+                
+                // Array of Order IDs that have been returned
+                const returnedOrderIds = myReturns.map(r => r.orderId);
+
                 // Filter orders belonging only to the logged-in user
                 const myOrders = allOrders.filter(order => order.customerEmail === loggedInEmail);
                 myOrders.reverse();
@@ -99,7 +105,6 @@
                     
                     let itemsHtml = "";
                     productsList.forEach(productString => {
-                        // Extract Name and Quantity from the string "Product Name (Qty: X)"
                         let pName = productString;
                         let pQty = "1";
                         
@@ -109,9 +114,8 @@
                             pQty = parts[1].replace(')', '').trim();
                         }
 
-                        // Match the name with the Products DB to get the Image URL
                         const matchedProduct = allProducts.find(p => p.name.toLowerCase() === pName.toLowerCase());
-                        const imgUrl = matchedProduct ? matchedProduct.imageUrl : 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=100'; // Fallback image
+                        const imgUrl = matchedProduct ? matchedProduct.imageUrl : 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=100';
                         const finalImgUrl = imgUrl.startsWith('http') ? imgUrl : `https://klipcart.onrender.com/${imgUrl}`;
 
                         itemsHtml += `
@@ -128,24 +132,26 @@
 
                     let statusInfo = "";
                     let actionButtons = "";
-                    let isReturned = returns[formattedOrderId] ? true : false;
-                    let pickupDate = returnDates[formattedOrderId]; 
-                    let isRefunded = refunds[formattedOrderId]; 
+                    
+                    // Check if this specific order exists in the Returns Database
+                    const isReturned = returnedOrderIds.includes(order.id.toString());
+                    const returnDetails = myReturns.find(r => r.orderId === order.id.toString());
 
                     const currentStatus = order.status || 'PENDING';
 
                     if (currentStatus === 'DELIVERED') {
-                        if(isRefunded) {
-                            statusInfo = `<div class="flex items-center gap-1.5 text-purple-700 font-bold text-sm bg-purple-100 px-3 py-2 rounded-lg border border-purple-200"><span class="material-symbols-outlined text-[18px]">verified</span> Refund Processed</div>`;
-                            actionButtons = `<span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">Return Closed</span>`;
-                        } else if (isReturned) {
-                            if(pickupDate) {
-                                const formattedPickup = new Date(pickupDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                                statusInfo = `<div class="flex items-center gap-1.5 text-blue-700 font-bold text-sm bg-blue-100 px-3 py-2 rounded-lg border border-blue-200"><span class="material-symbols-outlined text-[18px]">local_shipping</span> Pickup: ${formattedPickup}</div>`;
+                        if (isReturned) {
+                            const retStatus = returnDetails ? returnDetails.status : "RETURN_REQUESTED";
+                            
+                            if (retStatus === "REFUNDED") {
+                                statusInfo = `<div class="flex items-center gap-1.5 text-purple-700 font-bold text-sm bg-purple-100 px-3 py-2 rounded-lg border border-purple-200"><span class="material-symbols-outlined text-[18px]">verified</span> Refund Processed</div>`;
+                                actionButtons = `<span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">Return Closed</span>`;
+                            } else if (retStatus === "PICKUP_SCHEDULED") {
+                                statusInfo = `<div class="flex items-center gap-1.5 text-blue-700 font-bold text-sm bg-blue-100 px-3 py-2 rounded-lg border border-blue-200"><span class="material-symbols-outlined text-[18px]">local_shipping</span> Pickup Scheduled</div>`;
                                 actionButtons = `<span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Agent will contact you</span>`;
                             } else {
                                 statusInfo = `<div class="flex items-center gap-1.5 text-pink-600 font-bold text-sm bg-pink-50 px-3 py-2 rounded-lg border border-pink-100"><span class="material-symbols-outlined text-[18px]">assignment_return</span> Return Requested</div>`;
-                                actionButtons = `<span class="text-xs font-bold text-slate-400">Awaiting pickup date...</span>`;
+                                actionButtons = `<span class="text-xs font-bold text-slate-400">Awaiting approval...</span>`;
                             }
                         } else {
                             statusInfo = `<div class="flex items-center gap-1.5 text-green-600 font-bold text-sm bg-green-50 px-3 py-2 rounded-lg border border-green-100"><span class="material-symbols-outlined text-[18px]">task_alt</span> Delivered</div>`;
