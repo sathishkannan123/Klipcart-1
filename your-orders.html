@@ -47,8 +47,6 @@
     <script>
         const API_URL = "https://klipcart.onrender.com/api/orders";
         const loggedInEmail = localStorage.getItem("customerEmail");
-        // 🌟 1. லாகின் செய்தவரின் தனிப்பட்ட ஆர்டர்களை மட்டுமே எடுப்பதற்கான Key 🌟
-        const ORDERS_KEY = loggedInEmail ? "klipcart_orders_" + loggedInEmail : "orders";
 
         async function loadMyOrders() {
             if (!loggedInEmail) {
@@ -58,131 +56,136 @@
             }
 
             const container = document.getElementById('ordersContainer');
-            // 🌟 2. கஸ்டமரின் தனிப்பட்ட ஆர்டர்களை மட்டும் எடுக்கிறோம் 🌟
-            let localOrders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-            
+            container.innerHTML = `<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 border-t-transparent"></div></div>`;
+
             let returns = JSON.parse(localStorage.getItem('klipcart_returns')) || {}; 
             let returnDates = JSON.parse(localStorage.getItem('klipcart_return_dates')) || {}; 
             let refunds = JSON.parse(localStorage.getItem('klipcart_refunds')) || {}; 
 
             try {
+                // Fetch all orders from the Database
                 const res = await fetch(API_URL);
-                const dbOrders = await res.json();
+                if (!res.ok) throw new Error("Failed to fetch orders");
                 
-                localOrders = localOrders.map(local => {
-                    let dbId = local.orderId.replace("KLIP-", "");
-                    let matchedDb = dbOrders.find(db => db.id == dbId);
-                    
-                    if(matchedDb) {
-                        local.status = matchedDb.status;
-                        if(local.status === 'DELIVERED' && !local.deliveredDate) {
-                            local.deliveredDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                        }
-                    }
-                    return local;
-                });
+                const allOrders = await res.json();
                 
-                localStorage.setItem(ORDERS_KEY, JSON.stringify(localOrders));
-            } catch(e) { console.log("Offline mode or Backend off"); }
+                // Filter orders belonging only to the logged-in user
+                const myOrders = allOrders.filter(order => order.customerEmail === loggedInEmail);
 
-            if(localOrders.length === 0) {
-                container.innerHTML = `<div class="bg-white p-10 rounded-3xl border border-slate-200 text-center shadow-sm"><span class="material-symbols-outlined text-6xl text-slate-300 mb-4">inventory_2</span><h3 class="text-xl font-bold text-slate-900 mb-2">No orders found</h3><a href="index.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-xl inline-block mt-4">Start Shopping</a></div>`;
-                return;
-            }
+                // Reverse array to show latest orders first
+                myOrders.reverse();
 
-            container.innerHTML = "";
-            
-            localOrders.forEach(order => {
-                let itemsHtml = "";
-                order.items.forEach(item => {
-                    let imgUrl = item.imageUrl.startsWith('http') ? item.imageUrl : 'https://klipcart.onrender.com/' + item.imageUrl;
-                    itemsHtml += `<div class="flex items-center gap-4 py-4 border-b border-slate-100 last:border-0"><div class="w-16 h-16 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0 p-1"><img src="${imgUrl}" onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=100'" class="max-h-full max-w-full object-contain mix-blend-multiply"></div><div class="flex-1"><p class="font-bold text-slate-900 text-sm line-clamp-1">${item.name}</p><p class="text-xs text-slate-500 mt-1">Qty: ${item.qty} × ₹${item.cartPrice}</p></div><div class="font-black text-slate-900 text-sm">₹${item.qty * item.cartPrice}</div></div>`;
-                });
-
-                let statusInfo = "";
-                let actionButtons = "";
-                let isReturned = returns[order.orderId] ? true : false;
-                let pickupDate = returnDates[order.orderId]; 
-                let isRefunded = refunds[order.orderId]; 
-
-                if (order.status === 'DELIVERED') {
-                    if(isRefunded) {
-                        statusInfo = `<div class="flex items-center gap-1.5 text-purple-700 font-bold text-sm bg-purple-100 px-3 py-2 rounded-lg border border-purple-200"><span class="material-symbols-outlined text-[18px]">verified</span> Refund Processed</div>`;
-                        actionButtons = `<span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">Return Closed</span>`;
-                    } else if (isReturned) {
-                        if(pickupDate) {
-                            const formattedPickup = new Date(pickupDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                            statusInfo = `<div class="flex items-center gap-1.5 text-blue-700 font-bold text-sm bg-blue-100 px-3 py-2 rounded-lg border border-blue-200"><span class="material-symbols-outlined text-[18px]">local_shipping</span> Pickup: ${formattedPickup}</div>`;
-                            actionButtons = `<span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Agent will contact you</span>`;
-                        } else {
-                            statusInfo = `<div class="flex items-center gap-1.5 text-pink-600 font-bold text-sm bg-pink-50 px-3 py-2 rounded-lg border border-pink-100"><span class="material-symbols-outlined text-[18px]">assignment_return</span> Return Requested</div>`;
-                            actionButtons = `<span class="text-xs font-bold text-slate-400">Awaiting pickup date...</span>`;
-                        }
-                    } else {
-                        statusInfo = `<div class="flex items-center gap-1.5 text-green-600 font-bold text-sm bg-green-50 px-3 py-2 rounded-lg border border-green-100"><span class="material-symbols-outlined text-[18px]">task_alt</span> Delivered on ${order.deliveredDate || order.date}</div>`;
-                        actionButtons = `<button onclick="window.location.href='return-request.html?id=${order.orderId}'" class="bg-white border border-slate-300 text-slate-700 hover:border-pink-500 hover:text-pink-600 font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm shadow-sm"><span class="material-symbols-outlined text-[18px]">assignment_return</span> Return Item</button>`;
-                    }
-                } else {
-                    let statusColor = order.status === 'SHIPPED' ? 'text-blue-600 bg-blue-50 border-blue-100' : 'text-yellow-600 bg-yellow-50 border-yellow-100';
-                    let statusIcon = order.status === 'SHIPPED' ? 'local_shipping' : 'pending_actions';
-                    statusInfo = `<div class="flex items-center gap-1.5 ${statusColor} font-bold text-sm px-3 py-2 rounded-lg border"><span class="material-symbols-outlined text-[18px]">${statusIcon}</span> Order ${order.status}</div>`;
-                    actionButtons = `<button onclick="window.location.href='track-order.html?id=${order.orderId}'" class="bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-4 py-2 rounded-xl transition-all text-sm shadow-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">my_location</span> Track</button><button onclick="cancelOrder('${order.orderId}')" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold px-4 py-2 rounded-xl transition-all text-sm shadow-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">cancel</span> Cancel</button>`;
+                if(myOrders.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-white p-10 rounded-3xl border border-slate-200 text-center shadow-sm">
+                            <span class="material-symbols-outlined text-6xl text-slate-300 mb-4">inventory_2</span>
+                            <h3 class="text-xl font-bold text-slate-900 mb-2">No orders found</h3>
+                            <a href="index.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-xl inline-block mt-4 transition-colors">Start Shopping</a>
+                        </div>`;
+                    return;
                 }
 
-                container.innerHTML += `
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4">
-                            <div><p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Order ID</p><p class="font-black text-slate-900">${order.orderId}</p></div>
-                            <div><p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Order Date</p><p class="font-bold text-slate-800">${order.date}</p></div>
-                            <div class="text-right"><p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total</p><p class="font-black text-blue-600 text-lg">${order.total}</p></div>
-                        </div>
-                        <div class="px-6">${itemsHtml}</div>
-                        <div class="bg-slate-50/50 px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            ${statusInfo}
-                            <div class="flex items-center gap-3 w-full sm:w-auto">${actionButtons}</div>
-                        </div>
-                    </div>`;
-            });
+                container.innerHTML = "";
+                
+                myOrders.forEach(order => {
+                    const formattedOrderId = `KLIP-${order.id}`;
+                    // Convert total amount to proper format (assuming it's stored as a number in DB)
+                    const formattedTotal = `₹${Number(order.totalAmount).toLocaleString('en-IN')}`;
+                    
+                    // The backend returns productNames as a single string (e.g., "Mobile (Qty: 1), Laptop (Qty: 2)")
+                    // We split this string to create simple list items.
+                    const productsList = order.productNames.split(',').map(prod => prod.trim());
+                    
+                    let itemsHtml = "";
+                    productsList.forEach(productString => {
+                        itemsHtml += `
+                            <div class="flex items-center gap-4 py-3 border-b border-slate-100 last:border-0">
+                                <div class="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0 text-slate-400">
+                                    <span class="material-symbols-outlined">category</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-slate-900 text-sm">${productString}</p>
+                                </div>
+                            </div>`;
+                    });
+
+                    let statusInfo = "";
+                    let actionButtons = "";
+                    let isReturned = returns[formattedOrderId] ? true : false;
+                    let pickupDate = returnDates[formattedOrderId]; 
+                    let isRefunded = refunds[formattedOrderId]; 
+
+                    // In your backend, the default status is likely null or "PENDING". 
+                    // Let's default to PENDING if status is missing.
+                    const currentStatus = order.status || 'PENDING';
+
+                    if (currentStatus === 'DELIVERED') {
+                        if(isRefunded) {
+                            statusInfo = `<div class="flex items-center gap-1.5 text-purple-700 font-bold text-sm bg-purple-100 px-3 py-2 rounded-lg border border-purple-200"><span class="material-symbols-outlined text-[18px]">verified</span> Refund Processed</div>`;
+                            actionButtons = `<span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">Return Closed</span>`;
+                        } else if (isReturned) {
+                            if(pickupDate) {
+                                const formattedPickup = new Date(pickupDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                statusInfo = `<div class="flex items-center gap-1.5 text-blue-700 font-bold text-sm bg-blue-100 px-3 py-2 rounded-lg border border-blue-200"><span class="material-symbols-outlined text-[18px]">local_shipping</span> Pickup: ${formattedPickup}</div>`;
+                                actionButtons = `<span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Agent will contact you</span>`;
+                            } else {
+                                statusInfo = `<div class="flex items-center gap-1.5 text-pink-600 font-bold text-sm bg-pink-50 px-3 py-2 rounded-lg border border-pink-100"><span class="material-symbols-outlined text-[18px]">assignment_return</span> Return Requested</div>`;
+                                actionButtons = `<span class="text-xs font-bold text-slate-400">Awaiting pickup date...</span>`;
+                            }
+                        } else {
+                            statusInfo = `<div class="flex items-center gap-1.5 text-green-600 font-bold text-sm bg-green-50 px-3 py-2 rounded-lg border border-green-100"><span class="material-symbols-outlined text-[18px]">task_alt</span> Delivered</div>`;
+                            actionButtons = `<button onclick="window.location.href='return-request.html?id=${formattedOrderId}'" class="bg-white border border-slate-300 text-slate-700 hover:border-pink-500 hover:text-pink-600 font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm shadow-sm"><span class="material-symbols-outlined text-[18px]">assignment_return</span> Return Item</button>`;
+                        }
+                    } else {
+                        let statusColor = currentStatus === 'SHIPPED' ? 'text-blue-600 bg-blue-50 border-blue-100' : 'text-yellow-600 bg-yellow-50 border-yellow-100';
+                        let statusIcon = currentStatus === 'SHIPPED' ? 'local_shipping' : 'pending_actions';
+                        statusInfo = `<div class="flex items-center gap-1.5 ${statusColor} font-bold text-sm px-3 py-2 rounded-lg border"><span class="material-symbols-outlined text-[18px]">${statusIcon}</span> Order ${currentStatus}</div>`;
+                        actionButtons = `
+                            <button onclick="window.location.href='track-order.html?id=${formattedOrderId}'" class="bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 font-bold px-4 py-2 rounded-xl transition-all text-sm shadow-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">my_location</span> Track</button>
+                            <button onclick="cancelOrder('${order.id}', '${formattedOrderId}')" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold px-4 py-2 rounded-xl transition-all text-sm shadow-sm flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">cancel</span> Cancel</button>
+                        `;
+                    }
+
+                    // Display fallback date if DB date is missing
+                    const orderDate = order.date ? order.date : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                    container.innerHTML += `
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
+                            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4">
+                                <div><p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Order ID</p><p class="font-black text-slate-900">${formattedOrderId}</p></div>
+                                <div><p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Order Date</p><p class="font-bold text-slate-800">${orderDate}</p></div>
+                                <div class="text-right"><p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Amount</p><p class="font-black text-blue-600 text-lg">${formattedTotal}</p></div>
+                            </div>
+                            <div class="px-6 py-2">${itemsHtml}</div>
+                            <div class="bg-slate-50/50 px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                ${statusInfo}
+                                <div class="flex items-center gap-3 w-full sm:w-auto">${actionButtons}</div>
+                            </div>
+                        </div>`;
+                });
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                container.innerHTML = `<div class="bg-red-50 text-red-500 p-8 rounded-2xl border border-red-200 text-center font-bold">Failed to load orders. Please make sure the backend server is running.</div>`;
+            }
         }
 
-        // 🌟 ஆர்டரை நீக்கும் புதிய ஃபங்ஷன் 🌟
-        async function cancelOrder(orderId) {
-            if(confirm("Are you sure you want to cancel this order?")) {
-                
-                // "KLIP-7" என்பதில் இருந்து 7 ஐ மட்டும் பிரித்து எடுக்கிறோம்
-                const dbId = orderId.replace("KLIP-", "");
-                
+        async function cancelOrder(dbId, displayId) {
+            if(confirm(`Are you sure you want to cancel order ${displayId}?`)) {
                 try {
-                    // 1. Backend-ல் இருந்து நீக்குகிறோம் (DELETE API)
+                    // Send Delete Request to Backend
                     const res = await fetch(`${API_URL}/${dbId}`, { method: "DELETE" });
                     
                     if(res.ok) {
-                        removeOrderLocally(orderId);
-                        alert(orderId + " has been successfully cancelled. Refund will be processed in 3-5 days.");
+                        alert(`${displayId} has been successfully cancelled.`);
+                        loadMyOrders(); // Refresh the list
                     } else {
                         alert("Failed to cancel order on the server.");
                     }
                 } catch(e) {
-                    // Backend Offline-ல் இருந்தாலும் LocalStorage-ல் இருந்து நீக்குவதற்கு
-                    console.log("Server unreachable, deleting locally.");
-                    removeOrderLocally(orderId);
-                    alert(orderId + " has been successfully cancelled.");
+                    alert("Backend server unreachable. Could not cancel order.");
                 }
             }
-        }
-
-        // 🌟 LocalStorage-ல் இருந்து நீக்கிவிட்டு பேஜை அப்டேட் செய்யும் ஃபங்ஷன் 🌟
-        function removeOrderLocally(orderId) {
-            let localOrders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-            
-            // குறிப்பிட்ட ஆர்டரை மட்டும் Filter செய்து நீக்குகிறோம்
-            localOrders = localOrders.filter(order => order.orderId !== orderId);
-            
-            // மீதமுள்ள ஆர்டர்களை மீண்டும் சேமிக்கிறோம்
-            localStorage.setItem(ORDERS_KEY, JSON.stringify(localOrders));
-            
-            // UI-ஐ உடனடியாக அப்டேட் செய்கிறோம்
-            loadMyOrders();
         }
 
         window.onload = loadMyOrders;

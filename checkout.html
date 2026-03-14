@@ -143,7 +143,8 @@
     <script>
         const API_CART = "https://klipcart.onrender.com/api/cart";
         const API_ORDERS = "https://klipcart.onrender.com/api/orders";
-        
+        const API_PROFILE = "https://klipcart.onrender.com/api/profile";
+
         const userId = localStorage.getItem("userId");
         const customerEmail = localStorage.getItem("customerEmail");
         const customerName = localStorage.getItem("customerName");
@@ -186,6 +187,19 @@
                 // Auto-fill Name
                 if (customerName) {
                     document.getElementById('checkoutName').value = customerName;
+                }
+                if (customerEmail) {
+                    try {
+                        const profileRes = await fetch(`${API_PROFILE}/${customerEmail}`);
+                        if (profileRes.ok) {
+                            const profileData = await profileRes.json();
+                            if (profileData.fullName) document.getElementById('checkoutName').value = profileData.fullName;
+                            if (profileData.phone) document.getElementById('checkoutPhone').value = profileData.phone;
+                            if (profileData.address) document.getElementById('checkoutAddress').value = profileData.address;
+                        }
+                    } catch (profileError) {
+                        console.error("Profile auto-fill failed:", profileError);
+                    }
                 }
 
             } catch (error) {
