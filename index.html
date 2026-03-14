@@ -240,6 +240,7 @@
     }
 
     // 🌟 3. Add to Cart Logic (Database Integration) 🌟
+    // 🌟 3. Add to Cart Logic (Database Integration) 🌟
     async function addToCart(product) {
         if (!userId) {
             alert("⚠️ Please login to add items to your cart!");
@@ -256,11 +257,13 @@
                 alert(`✅ ${product.name} added to cart successfully!`);
                 updateBadges(); 
             } else {
-                alert("❌ Failed to add product to cart.");
+                
+                const errorText = await response.text();
+                alert(`❌ Backend Error: ${response.status}\n\nDetails: ${errorText}`);
             }
         } catch (error) {
             console.error("Error adding to cart:", error);
-            alert("Server Error! Please try again.");
+            alert("❌ System Error! Make sure backend is running.");
         }
     }
 
