@@ -65,13 +65,16 @@
         </div>
     </main>
 
-    <script>
-        // URL-ல் இருந்து ஆர்டர் ஐடியை எடுப்பது
+   <script>
+        const API_RETURNS = "https://klipcart.onrender.com/api/returns";
+        const customerEmail = localStorage.getItem("customerEmail");
+
+        // Extract Order ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('id') || "Unknown";
         document.getElementById('displayOrderId').innerText = orderId;
 
-        // "Others" என்பதை செலக்ட் செய்தால் Text Box காட்டும்
+        // Toggle 'Other' reason text box
         function toggleOther() {
             const isOther = document.getElementById('reasonOther').checked;
             const otherBox = document.getElementById('otherReasonBox');
@@ -86,22 +89,65 @@
             }
         }
 
-        // சப்மிட் செய்யும்போது
-        function submitReturn(event) {
+        // Handle Return Submission
+        async function submitReturn(event) {
             event.preventDefault();
+
+            if (!customerEmail) {
+                alert("Please login first!");
+                window.location.href = "login.html";
+                return;
+            }
             
             let selectedReason = document.querySelector('input[name="returnReason"]:checked').value;
-            if(selectedReason === 'Other') {
-                selectedReason = document.getElementById('otherReasonText').value;
+            if (selectedReason === 'Other') {
+                selectedReason = document.getElementById('otherReasonText').value.trim();
+                if (!selectedReason) {
+                    alert("Please specify the reason.");
+                    return;
+                }
             }
 
-            // LocalStorage-ல் ரிட்டர்ன் விவரங்களைச் சேமிக்கிறோம்
-            let returns = JSON.parse(localStorage.getItem('klipcart_returns')) || {};
-            returns[orderId] = selectedReason; // ஆர்டர் ஐடியுடன் காரணத்தை இணைக்கிறோம்
-            localStorage.setItem('klipcart_returns', JSON.stringify(returns));
+            // Button loading state
+            const btn = document.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "Processing...";
+            btn.disabled = true;
 
-            alert("✅ Return request submitted successfully!");
-            window.location.href = 'your-orders.html'; // மீண்டும் ஆர்டர் பேஜுக்கு அனுப்புகிறோம்
+            // Extract numeric ID from "KLIP-123"
+            const rawOrderId = orderId.replace("KLIP-", "");
+
+            // Prepare Return Data payload
+            const returnData = {
+                orderId: rawOrderId,
+                customerEmail: customerEmail,
+                reason: selectedReason,
+                status: "RETURN_REQUESTED",
+                requestDate: new Date().toISOString()
+            };
+
+            try {
+                // Send Return Request to Database
+                const response = await fetch(API_RETURNS, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(returnData)
+                });
+
+                if (response.ok) {
+                    alert("✅ Return request submitted successfully to database!");
+                    window.location.href = 'your-orders.html'; 
+                } else {
+                    alert("Failed to submit return request. Please try again.");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error("Error submitting return:", error);
+                alert("Backend server error. Make sure your Return API is running.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
     </script>
 </body>

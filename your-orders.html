@@ -45,7 +45,8 @@
     </footer>
 
     <script>
-        const API_URL = "https://klipcart.onrender.com/api/orders";
+        const API_ORDERS = "https://klipcart.onrender.com/api/orders";
+        const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
         const loggedInEmail = localStorage.getItem("customerEmail");
 
         async function loadMyOrders() {
@@ -63,16 +64,19 @@
             let refunds = JSON.parse(localStorage.getItem('klipcart_refunds')) || {}; 
 
             try {
-                // Fetch all orders from the Database
-                const res = await fetch(API_URL);
-                if (!res.ok) throw new Error("Failed to fetch orders");
+                // Fetch Orders AND Products from the Database simultaneously
+                const [resOrders, resProducts] = await Promise.all([
+                    fetch(API_ORDERS),
+                    fetch(API_PRODUCTS)
+                ]);
+
+                if (!resOrders.ok || !resProducts.ok) throw new Error("Failed to fetch data");
                 
-                const allOrders = await res.json();
+                const allOrders = await resOrders.json();
+                const allProducts = await resProducts.json();
                 
                 // Filter orders belonging only to the logged-in user
                 const myOrders = allOrders.filter(order => order.customerEmail === loggedInEmail);
-
-                // Reverse array to show latest orders first
                 myOrders.reverse();
 
                 if(myOrders.length === 0) {
@@ -89,22 +93,35 @@
                 
                 myOrders.forEach(order => {
                     const formattedOrderId = `KLIP-${order.id}`;
-                    // Convert total amount to proper format (assuming it's stored as a number in DB)
                     const formattedTotal = `₹${Number(order.totalAmount).toLocaleString('en-IN')}`;
                     
-                    // The backend returns productNames as a single string (e.g., "Mobile (Qty: 1), Laptop (Qty: 2)")
-                    // We split this string to create simple list items.
                     const productsList = order.productNames.split(',').map(prod => prod.trim());
                     
                     let itemsHtml = "";
                     productsList.forEach(productString => {
+                        // Extract Name and Quantity from the string "Product Name (Qty: X)"
+                        let pName = productString;
+                        let pQty = "1";
+                        
+                        if (productString.includes("(Qty:")) {
+                            const parts = productString.split("(Qty:");
+                            pName = parts[0].trim();
+                            pQty = parts[1].replace(')', '').trim();
+                        }
+
+                        // Match the name with the Products DB to get the Image URL
+                        const matchedProduct = allProducts.find(p => p.name.toLowerCase() === pName.toLowerCase());
+                        const imgUrl = matchedProduct ? matchedProduct.imageUrl : 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=100'; // Fallback image
+                        const finalImgUrl = imgUrl.startsWith('http') ? imgUrl : `https://klipcart.onrender.com/${imgUrl}`;
+
                         itemsHtml += `
                             <div class="flex items-center gap-4 py-3 border-b border-slate-100 last:border-0">
-                                <div class="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0 text-slate-400">
-                                    <span class="material-symbols-outlined">category</span>
+                                <div class="w-16 h-16 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0 p-1">
+                                    <img src="${finalImgUrl}" onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=100'" class="max-h-full max-w-full object-contain mix-blend-multiply">
                                 </div>
                                 <div class="flex-1">
-                                    <p class="font-bold text-slate-900 text-sm">${productString}</p>
+                                    <p class="font-bold text-slate-900 text-sm line-clamp-1">${pName}</p>
+                                    <p class="text-xs text-slate-500 mt-1">Qty: ${pQty}</p>
                                 </div>
                             </div>`;
                     });
@@ -115,8 +132,6 @@
                     let pickupDate = returnDates[formattedOrderId]; 
                     let isRefunded = refunds[formattedOrderId]; 
 
-                    // In your backend, the default status is likely null or "PENDING". 
-                    // Let's default to PENDING if status is missing.
                     const currentStatus = order.status || 'PENDING';
 
                     if (currentStatus === 'DELIVERED') {
@@ -146,7 +161,6 @@
                         `;
                     }
 
-                    // Display fallback date if DB date is missing
                     const orderDate = order.date ? order.date : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
                     container.innerHTML += `
@@ -173,12 +187,11 @@
         async function cancelOrder(dbId, displayId) {
             if(confirm(`Are you sure you want to cancel order ${displayId}?`)) {
                 try {
-                    // Send Delete Request to Backend
-                    const res = await fetch(`${API_URL}/${dbId}`, { method: "DELETE" });
+                    const res = await fetch(`${API_ORDERS}/${dbId}`, { method: "DELETE" });
                     
                     if(res.ok) {
                         alert(`${displayId} has been successfully cancelled.`);
-                        loadMyOrders(); // Refresh the list
+                        loadMyOrders(); 
                     } else {
                         alert("Failed to cancel order on the server.");
                     }
