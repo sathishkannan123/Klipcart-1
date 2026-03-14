@@ -201,177 +201,229 @@
         </div>
     </footer>
 
-    <script>
-        const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
-        let allProducts = []; 
+   <script>
+    const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
+    const API_CART = "https://klipcart.onrender.com/api/cart";
+    const API_WISHLIST = "https://klipcart.onrender.com/api/wishlist";
+    
+    let allProducts = []; 
 
-        // 🌟 1. User Specific Keys Setup 🌟
-        const userEmail = localStorage.getItem("customerEmail");
-        const CART_KEY = userEmail ? "klipcart_cart_" + userEmail : "cart";
-        const WISHLIST_KEY = userEmail ? "klipcart_wishlist_" + userEmail : "klipcart_wishlist";
+    const userId = localStorage.getItem("userId"); 
 
-        // 🌟 2. Update Badges Logic (Wishlist & Cart) 🌟
-        function updateBadges() {
-            const cartItems = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            const wishlistItems = JSON.parse(localStorage.getItem(WISHLIST_KEY)) || [];
-            
-            const cartBadge = document.getElementById("cartCount");
-            const wishlistBadge = document.getElementById("navWishlistBadge");
-            
-            if(cartBadge) cartBadge.innerText = cartItems.length;
-            if(wishlistBadge) wishlistBadge.innerText = wishlistItems.length;
+    // 🌟 2. Update Badges Logic (Database Integration) 🌟
+    async function updateBadges() {
+        if (!userId) return;
+
+        try {
+
+            const cartRes = await fetch(`${API_CART}/${userId}`);
+            if (cartRes.ok) {
+                const cartItems = await cartRes.json();
+                const cartBadge = document.getElementById("cartCount");
+                if (cartBadge) cartBadge.innerText = cartItems.length;
+            }
+
+
+            const wishRes = await fetch(`${API_WISHLIST}/${userId}`);
+            if (wishRes.ok) {
+                const wishItems = await wishRes.json();
+                const wishBadge = document.getElementById("navWishlistBadge");
+                if (wishBadge) wishBadge.innerText = wishItems.length;
+            }
+        } catch (error) {
+            console.error("Error updating badges:", error);
+        }
+    }
+
+    function goToCategory(categoryName) {
+        window.location.href = "products.html?category=" + categoryName;
+    }
+
+    // 🌟 3. Add to Cart Logic (Database Integration) 🌟
+    async function addToCart(product) {
+        if (!userId) {
+            alert("⚠️ Please login to add items to your cart!");
+            window.location.href = "login.html";
+            return;
         }
 
-        function goToCategory(categoryName) {
-            window.location.href = "products.html?category=" + categoryName;
-        }
+        try {
+            const response = await fetch(`${API_CART}/add?userId=${userId}&productId=${product.id}&quantity=1`, {
+                method: 'POST'
+            });
 
-        // 🌟 3. Add to Cart Logic (User Specific) 🌟
-        function addToCart(product) {
-            let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-            
-            const existingItem = cart.find(item => item.id === product.id);
-            if (existingItem) {
-                existingItem.qty = (existingItem.qty || 1) + 1;
+            if (response.ok) {
+                alert(`✅ ${product.name} added to cart successfully!`);
+                updateBadges(); 
             } else {
-                let finalPrice = product.salePrice && product.salePrice < product.price ? product.salePrice : product.price;
-                cart.push({ ...product, cartPrice: finalPrice, qty: 1 });
+                alert("❌ Failed to add product to cart.");
             }
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            alert("Server Error! Please try again.");
+        }
+    }
+
+    // 🌟 4. Add to Wishlist Logic (Database Integration) 🌟
+    async function addToWishlist(product) {
+        if (!userId) {
+            alert("⚠️ Please login to add items to your wishlist!");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_WISHLIST}/add?userId=${userId}&productId=${product.id}`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                alert(`❤️ ${product.name} added to Wishlist!`);
+                updateBadges(); 
+            } else {
+                alert("❌ Failed to add to wishlist.");
+            }
+        } catch (error) {
+            console.error("Error adding to wishlist:", error);
+            alert("Server Error! Please try again.");
+        }
+    }
+
+    // 🌟 Load Products API 🌟
+    async function loadProducts(){
+        const grid = document.getElementById("productGrid");
+        try {
+            const response = await fetch(API_PRODUCTS);
+            allProducts = await response.json(); 
+            renderProducts(allProducts); 
+        } catch(e) {
+            grid.innerHTML = "<div class='col-span-full bg-red-50 text-red-500 p-6 rounded-xl border border-red-200 text-center font-bold'>Backend server is not running! ❌</div>";
+        }
+    }
+
+    // 🌟 Render Products to Screen 🌟
+    function renderProducts(productsToRender) {
+        const grid = document.getElementById("productGrid");
+        grid.innerHTML = ""; 
+
+        if(productsToRender.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-16">
+                    <span class="material-symbols-outlined text-6xl text-gray-300 mb-4">search_off</span>
+                    <p class='text-gray-500 font-semibold'>No products found matching your search.</p>
+                </div>`;
+            return;
+        }
+
+        productsToRender.forEach(p => {
+            const imgUrl = p.imageUrl; 
+            let priceHtml = `<p class="text-xl font-bold text-gray-900">₹${p.price.toLocaleString('en-IN')}</p>`;
+            let badgeHtml = '';
             
-            localStorage.setItem(CART_KEY, JSON.stringify(cart));
-            updateBadges();
-            alert(`✅ ${product.name} added to cart successfully!`);
-        }
-
-        // Load Products API
-        async function loadProducts(){
-            const grid = document.getElementById("productGrid");
-            try {
-                const response = await fetch(API_PRODUCTS);
-                allProducts = await response.json(); 
-                renderProducts(allProducts); 
-            } catch(e) {
-                grid.innerHTML = "<div class='col-span-full bg-red-50 text-red-500 p-6 rounded-xl border border-red-200 text-center font-bold'>Backend server is not running! ❌</div>";
-            }
-        }
-
-        // Render Products to Screen
-        function renderProducts(productsToRender) {
-            const grid = document.getElementById("productGrid");
-            grid.innerHTML = ""; 
-
-            if(productsToRender.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full flex flex-col items-center justify-center py-16">
-                        <span class="material-symbols-outlined text-6xl text-gray-300 mb-4">search_off</span>
-                        <p class='text-gray-500 font-semibold'>No products found matching your search.</p>
-                    </div>`;
-                return;
-            }
-
-            productsToRender.forEach(p => {
-                const imgUrl = p.imageUrl;
-                let priceHtml = `<p class="text-xl font-bold text-gray-900">₹${p.price.toLocaleString('en-IN')}</p>`;
-                let badgeHtml = '';
-                
-                if(p.salePrice && p.salePrice < p.price) {
-                    const discount = Math.round(((p.price - p.salePrice) / p.price) * 100);
-                    priceHtml = `
-                        <div class="flex flex-col">
-                            <span class="text-sm text-gray-400 line-through">₹${p.price.toLocaleString('en-IN')}</span>
-                            <span class="text-xl font-bold text-red-600">₹${p.salePrice.toLocaleString('en-IN')}</span>
-                        </div>
-                    `;
-                    badgeHtml = `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full z-10 shadow-sm">${discount}% OFF</span>`;
-                }
-
-                grid.innerHTML += `
-                    <div onclick="window.location.href='product-details.html?id=${p.id}'" class="cursor-pointer group bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col relative">
-                        <div class="relative h-56 w-full overflow-hidden bg-gray-50 flex items-center justify-center p-4">
-                            ${badgeHtml}
-                            <img src="${imgUrl}" onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?q=80&w=400&auto=format&fit=crop'" class="max-h-full max-w-full object-contain transform group-hover:scale-110 transition-transform duration-500 ease-in-out mix-blend-multiply">
-                        </div>
-                        <div class="p-5 flex flex-col flex-grow border-t border-gray-50">
-                            <span class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">${p.category}</span>
-                            <h3 class="font-bold text-gray-800 text-lg leading-tight mb-3 line-clamp-2">${p.name}</h3>
-                            <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                                ${priceHtml}
-                                <button onclick='event.stopPropagation(); addToCart(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="bg-slate-900 hover:bg-blue-600 text-white p-3 rounded-xl transition-colors duration-300 shadow-md transform active:scale-95">
-                                    <span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
-                                </button>
-                            </div>
-                        </div>
+            if(p.salePrice && p.salePrice < p.price) {
+                const discount = Math.round(((p.price - p.salePrice) / p.price) * 100);
+                priceHtml = `
+                    <div class="flex flex-col">
+                        <span class="text-sm text-gray-400 line-through">₹${p.price.toLocaleString('en-IN')}</span>
+                        <span class="text-xl font-bold text-red-600">₹${p.salePrice.toLocaleString('en-IN')}</span>
                     </div>
                 `;
-            });
-        }
-
-        function handleSearch() {
-            const query = document.getElementById("searchInput").value.toLowerCase();
-            document.getElementById("mobileSearchInput").value = query;
-            filterAndScroll(query);
-        }
-
-        function handleMobileSearch() {
-            const query = document.getElementById("mobileSearchInput").value.toLowerCase();
-            document.getElementById("searchInput").value = query;
-            filterAndScroll(query);
-        }
-
-        function filterAndScroll(query) {
-            const filteredProducts = allProducts.filter(p => 
-                p.name.toLowerCase().includes(query) || 
-                p.category.toLowerCase().includes(query) ||
-                (p.tags && p.tags.toLowerCase().includes(query))
-            );
-            
-            document.getElementById("sectionTitle").innerText = query ? `Search Results for "${query}"` : "Featured Products";
-            renderProducts(filteredProducts);
-
-            if(query.length === 1) {
-                document.getElementById("productsSection").scrollIntoView({ behavior: "smooth", block: "start" });
+                badgeHtml = `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full z-10 shadow-sm">${discount}% OFF</span>`;
             }
-        }
 
-        function updateAccountMenu() {
-            const name = localStorage.getItem("customerName");
-            if (name) {
-                document.getElementById("accountText").innerText = name;
-                document.getElementById("displayNameMenu").innerText = name;
-                document.getElementById("guestMenu").classList.add("hidden");
-                document.getElementById("userMenu").classList.remove("hidden");
-                document.getElementById("profileIcon").classList.remove("hidden");
-            } else {
-                document.getElementById("accountText").innerText = "Account";
-                document.getElementById("guestMenu").classList.remove("hidden");
-                document.getElementById("userMenu").classList.add("hidden");
-                document.getElementById("profileIcon").classList.remove("hidden");
-            }
-        }
+            grid.innerHTML += `
+                <div onclick="window.location.href='product-details.html?id=${p.id}'" class="cursor-pointer group bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col relative">
+                    <div class="relative h-56 w-full overflow-hidden bg-gray-50 flex items-center justify-center p-4">
+                        ${badgeHtml}
+                        
+                        <button onclick='event.stopPropagation(); addToWishlist(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md text-gray-400 hover:text-red-500 transition-colors z-10" title="Add to Wishlist">
+                            <span class="material-symbols-outlined">favorite</span>
+                        </button>
 
-        function toggleDropdown() { document.getElementById("accountDropdown").classList.toggle("hidden"); }
-        
-        // 🌟 4. Logout Logic (User Specific) 🌟
-        function logout() { 
-            // லாகின் தகவல்களை மட்டுமே அழிக்கிறோம். 
-            // (கஸ்டமரின் தனிப்பட்ட Cart/Wishlist Data பிரவுசரில் பத்திரமாக இருக்கும், அவர்கள் மீண்டும் லாகின் செய்யும்போது வந்துவிடும்!)
-            localStorage.removeItem("customerEmail");
-            localStorage.removeItem("customerName");
-
-            alert("Logged out successfully!");
-            window.location.href = "index.html"; 
-        }
-
-        document.addEventListener("click", function (event) {
-            const dropdown = document.getElementById("accountDropdown");
-            if (!event.target.closest(".relative")) { dropdown?.classList.add("hidden"); }
+                        <img src="${imgUrl}" onerror="this.src='https://images.unsplash.com/photo-1560393464-5c69a73c5770?q=80&w=400&auto=format&fit=crop'" class="max-h-full max-w-full object-contain transform group-hover:scale-110 transition-transform duration-500 ease-in-out mix-blend-multiply">
+                    </div>
+                    <div class="p-5 flex flex-col flex-grow border-t border-gray-50">
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">${p.category}</span>
+                        <h3 class="font-bold text-gray-800 text-lg leading-tight mb-3 line-clamp-2">${p.name}</h3>
+                        <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                            ${priceHtml}
+                            
+                            <button onclick='event.stopPropagation(); addToCart(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="bg-slate-900 hover:bg-blue-600 text-white p-3 rounded-xl transition-colors duration-300 shadow-md transform active:scale-95">
+                                <span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
         });
+    }
 
-        window.onload = function () {
-            updateAccountMenu();
-            updateBadges(); 
-            loadProducts();
-        };
-    </script>
+    function handleSearch() {
+        const query = document.getElementById("searchInput").value.toLowerCase();
+        document.getElementById("mobileSearchInput").value = query;
+        filterAndScroll(query);
+    }
+
+    function handleMobileSearch() {
+        const query = document.getElementById("mobileSearchInput").value.toLowerCase();
+        document.getElementById("searchInput").value = query;
+        filterAndScroll(query);
+    }
+
+    function filterAndScroll(query) {
+        const filteredProducts = allProducts.filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            p.category.toLowerCase().includes(query) ||
+            (p.tags && p.tags.toLowerCase().includes(query))
+        );
+        
+        document.getElementById("sectionTitle").innerText = query ? `Search Results for "${query}"` : "Featured Products";
+        renderProducts(filteredProducts);
+
+        if(query.length === 1) {
+            document.getElementById("productsSection").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }
+
+    function updateAccountMenu() {
+        const name = localStorage.getItem("customerName");
+        if (name) {
+            document.getElementById("accountText").innerText = name;
+            document.getElementById("displayNameMenu").innerText = name;
+            document.getElementById("guestMenu").classList.add("hidden");
+            document.getElementById("userMenu").classList.remove("hidden");
+            document.getElementById("profileIcon").classList.remove("hidden");
+        } else {
+            document.getElementById("accountText").innerText = "Account";
+            document.getElementById("guestMenu").classList.remove("hidden");
+            document.getElementById("userMenu").classList.add("hidden");
+            document.getElementById("profileIcon").classList.remove("hidden");
+        }
+    }
+
+    function toggleDropdown() { document.getElementById("accountDropdown").classList.toggle("hidden"); }
+    
+    // 🌟 Logout Logic 🌟
+    function logout() { 
+    
+        localStorage.removeItem("customerEmail");
+        localStorage.removeItem("customerName");
+        localStorage.removeItem("userId");
+
+        alert("Logged out successfully!");
+        window.location.href = "index.html"; 
+    }
+
+    document.addEventListener("click", function (event) {
+        const dropdown = document.getElementById("accountDropdown");
+        if (!event.target.closest(".relative")) { dropdown?.classList.add("hidden"); }
+    });
+
+    window.onload = function () {
+        updateAccountMenu();
+        updateBadges(); 
+        loadProducts();
+    };
+</script>
 </body>
 </html>
