@@ -200,7 +200,7 @@
 
     <script>
         const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtytxv0yl/image/upload";
-    const CLOUDINARY_PRESET = "klipcart_preset"; 
+    const CLOUDINARY_PRESET = "klipcart-preset"; 
 
     document.getElementById("productForm").addEventListener("submit", async function(e) {
         e.preventDefault();
@@ -218,7 +218,7 @@
             if (imageFile && imageFile.size > 0) {
                 const cloudData = new FormData();
                 cloudData.append("file", imageFile);
-                cloudData.append("upload_preset", CLOUDINARY_PRESET);
+                cloudData.append("upload-preset", CLOUDINARY_PRESET);
 
                 const cloudRes = await fetch(CLOUDINARY_URL, {
                     method: "POST",
