@@ -155,7 +155,7 @@
         </div>
     </main>
 
-    <script>
+   <script>
         function togglePassword() {
             const pwdInput = document.getElementById("password");
             const eyeIcon = document.getElementById("eyeIcon");
@@ -177,7 +177,6 @@
             const emailInput = document.getElementById("email").value.trim().toLowerCase();
             const passwordInput = document.getElementById("password").value.trim();
 
-            // லோடிங் அனிமேஷன் பட்டனில் காட்ட...
             const btn = event.target.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
             btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> Verifying...`;
@@ -192,53 +191,23 @@
                     },
                     body: JSON.stringify({ email: emailInput, password: passwordInput })
                 });
-
-                // Backend-ல் இருந்து வரும் டேட்டாவை படிக்கிறோம்
+                
                 const userDataText = await response.text(); 
 
-                // டேட்டாபேஸில் இந்த Email & Pass இருந்தால் மட்டுமே response.ok ஆகவும் userDataText காலியாக இல்லாமலும் வரும்
                 if (response.ok && userDataText) {
                     
                     const user = JSON.parse(userDataText); 
-                    const userName = user.fullName || emailInput.split('@')[0]; // டேட்டாபேஸில் உள்ள பெயர்
+                    const userName = user.fullName || emailInput.split('@')[0]; 
 
-                    // லாகின் தகவல்களைச் சேமிக்கிறோம்
+                  
+                    localStorage.setItem("userId", user.id); 
                     localStorage.setItem("customerEmail", emailInput);
                     localStorage.setItem("customerName", userName);
-
-                    // 🌟 2. CART MERGING 🌟
-                    let guestCart = JSON.parse(localStorage.getItem('cart')) || [];
-                    let userCartKey = "klipcart_cart_" + emailInput;
-                    let userCart = JSON.parse(localStorage.getItem(userCartKey)) || [];
-
-                    if(guestCart.length > 0) {
-                        guestCart.forEach(gItem => {
-                            let exists = userCart.find(u => u.id === gItem.id);
-                            if(exists) exists.qty += gItem.qty; 
-                            else userCart.push(gItem); 
-                        });
-                        localStorage.setItem(userCartKey, JSON.stringify(userCart));
-                        localStorage.removeItem('cart'); 
-                    }
-
-                    // 🌟 3. WISHLIST MERGING 🌟
-                    let guestWish = JSON.parse(localStorage.getItem('klipcart_wishlist')) || [];
-                    let userWishKey = "klipcart_wishlist_" + emailInput;
-                    let userWish = JSON.parse(localStorage.getItem(userWishKey)) || [];
-
-                    if(guestWish.length > 0) {
-                        guestWish.forEach(gItem => {
-                            if(!userWish.find(u => u.id === gItem.id)) userWish.push(gItem);
-                        });
-                        localStorage.setItem(userWishKey, JSON.stringify(userWish));
-                        localStorage.removeItem('klipcart_wishlist');
-                    }
 
                     alert("Login Successful! Welcome back, " + userName);
                     window.location.href = "index.html"; 
 
                 } else {
-                    // Password அல்லது Email தவறாக இருந்தால்
                     alert("❌ Invalid Email or Password! Please check and try again.");
                     btn.innerHTML = originalText;
                     btn.disabled = false;
