@@ -199,15 +199,16 @@
     </main>
 
     <script>
-        const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtytxv0yl/image/upload";
-    const CLOUDINARY_PRESET = "klipcart-preset"; 
+    // உங்கள் Cloud Name மற்றும் சரியான Preset Name
+    const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtytxv0yl/image/upload";
+    const CLOUDINARY_PRESET = "klipcart-preset";
 
     document.getElementById("productForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Uploading...`;
+        submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Uploading Image...`;
         submitBtn.disabled = true;
 
         const formData = new FormData(this);
@@ -215,10 +216,11 @@
         let finalImageUrl = "";
 
         try {
+            // 1. Cloudinary-க்கு அப்லோட் செய்தல்
             if (imageFile && imageFile.size > 0) {
                 const cloudData = new FormData();
                 cloudData.append("file", imageFile);
-                cloudData.append("upload-preset", CLOUDINARY_PRESET);
+                cloudData.append("upload_preset", CLOUDINARY_PRESET);
 
                 const cloudRes = await fetch(CLOUDINARY_URL, {
                     method: "POST",
@@ -227,16 +229,23 @@
 
                 if (cloudRes.ok) {
                     const cloudJson = await cloudRes.json();
-                    finalImageUrl = cloudJson.secure_url;
+                    finalImageUrl = cloudJson.secure_url; 
                 } else {
-                    throw new Error("Cloudinary Upload Failed");
+                    // Cloudinary-ல் பிரச்சனை என்றால் என்ன பிரச்சனை என்று காட்டும்
+                    const errorDetails = await cloudRes.json();
+                    alert("☁️ Cloudinary Error: " + (errorDetails.error ? errorDetails.error.message : "Unknown Error"));
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    return; // கோடை இங்கேயே நிறுத்திவிடும்
                 }
             }
+
+            // 2. Render Backend-க்கு அனுப்புதல்
             const urlBlob = new Blob(["image_url_placeholder"], { type: "text/plain" });
             const tempFile = new File([urlBlob], finalImageUrl, { type: "image/png" });
             formData.set("image", tempFile);
 
-            submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Saving Product...`;
+            submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Saving in Database...`;
 
             const response = await fetch("https://klipcart.onrender.com/api/products", {
                 method: "POST",
@@ -247,25 +256,27 @@
                 alert("🎉 Product Added Successfully!");
                 this.reset();
             } else {
-                alert("❌ Error Adding Product to Database.");
+                // Backend-ல் பிரச்சனை என்றால் அந்த எர்ரரைக் காட்டும்
+                const backendError = await response.text();
+                alert("⚙️ Backend Error (" + response.status + "): " + backendError);
             }
         } catch (error) {
+            // இன்டர்நெட் கட் ஆனால் இதைக் காட்டும்
             console.error(error);
-            alert("❌ Network Error or Backend Server Not Running!");
+            alert("❌ System Error: " + error.message);
         } finally {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }
-    })
+    });
 
-        // 🌟 Admin Logout Function 🌟
-        function adminLogout() {
-            if(confirm("Are you sure you want to log out?")) {
-                localStorage.removeItem("klipcart_admin_token");
-                localStorage.removeItem("klipcart_admin_session");
-                window.location.href = "admin-login.html";
-            }
+    function adminLogout() {
+        if(confirm("Are you sure you want to log out?")) {
+            localStorage.removeItem("klipcart_admin_token");
+            localStorage.removeItem("klipcart_admin_session");
+            window.location.href = "admin-login.html";
         }
-    </script>
+    }
+</script>
 </body>
 </html>
