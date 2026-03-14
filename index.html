@@ -290,6 +290,75 @@
             console.error("Error adding to wishlist:", error);
             alert("Server Error! Please try again.");
         }
+    }// 🌟 3. Add to Cart Logic (Database Integration) 🌟
+    async function addToCart(product) {
+        
+        if (!userId || userId === "null" || userId === "undefined") {
+            alert("⚠️ Please login to add items to your cart!");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+       
+            const params = new URLSearchParams();
+            params.append("userId", userId);
+            params.append("productId", product.id);
+            params.append("quantity", 1);
+
+            const response = await fetch(`${API_CART}/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params
+            });
+
+            if (response.ok) {
+                alert(`✅ ${product.name} added to cart successfully!`);
+                updateBadges(); 
+            } else {
+                const errorText = await response.text();
+                alert(`❌ Backend Error: ${response.status}\n\nDetails: ${errorText}`);
+            }
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            alert("❌ System Error! Make sure backend is running.");
+        }
+    }
+
+    // 🌟 4. Add to Wishlist Logic (Database Integration) 🌟
+    async function addToWishlist(product) {
+        if (!userId || userId === "null" || userId === "undefined") {
+            alert("⚠️ Please login to add items to your wishlist!");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append("userId", userId);
+            params.append("productId", product.id);
+
+            const response = await fetch(`${API_WISHLIST}/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params
+            });
+
+            if (response.ok) {
+                alert(`❤️ ${product.name} added to Wishlist!`);
+                updateBadges(); 
+            } else {
+                const errorText = await response.text();
+                alert(`❌ Backend Error: ${response.status}\n\nDetails: ${errorText}`);
+            }
+        } catch (error) {
+            console.error("Error adding to wishlist:", error);
+            alert("❌ System Error! Make sure backend is running.");
+        }
     }
 
     // 🌟 Load Products API 🌟
