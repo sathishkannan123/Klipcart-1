@@ -270,7 +270,7 @@
             }
 
             productsToRender.forEach(p => {
-                const imgUrl = `https://klipcart.onrender.com/${p.imageUrl}`;
+                const imgUrl = p.imageUrl;
                 let priceHtml = `<p class="text-xl font-bold text-gray-900">₹${p.price.toLocaleString('en-IN')}</p>`;
                 let badgeHtml = '';
                 
