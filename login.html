@@ -155,7 +155,7 @@
         </div>
     </main>
 
-   <script>
+<script>
         function togglePassword() {
             const pwdInput = document.getElementById("password");
             const eyeIcon = document.getElementById("eyeIcon");
@@ -191,7 +191,7 @@
                     },
                     body: JSON.stringify({ email: emailInput, password: passwordInput })
                 });
-                
+
                 const userDataText = await response.text(); 
 
                 if (response.ok && userDataText) {
@@ -199,7 +199,7 @@
                     const user = JSON.parse(userDataText); 
                     const userName = user.fullName || emailInput.split('@')[0]; 
 
-                  
+                    // 🌟 மிக முக்கியமான மாற்றம்: இங்கேதான் userId-ஐ சேமிக்கிறோம்! 🌟
                     localStorage.setItem("userId", user.id); 
                     localStorage.setItem("customerEmail", emailInput);
                     localStorage.setItem("customerName", userName);
