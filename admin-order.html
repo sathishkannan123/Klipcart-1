@@ -113,13 +113,8 @@
 
     <script>
         const API_URL = "https://klipcart.onrender.com/api/orders";
-        const API_RETURNS = "https://klipcart.onrender.com/api/returns/admin/all";
-        const API_USERS = "https://klipcart.onrender.com/api/admin/users";
-        const API_CHATS = "https://klipcart.onrender.com/api/chat/admin/all";
 
-        // Global Badge State
-        window.liveDataCounts = { order: 0, return: 0, user: 0, chat: 0 };
-
+        // --- AUTHENTICATION & HEADERS ---
         const adminToken = localStorage.getItem("klipcart_admin_token");
         if (!adminToken) {
             alert("Unauthorized Access! Please login as Admin.");
@@ -131,6 +126,7 @@
             "Content-Type": "application/json"
         };
 
+        // --- MAIN PAGE LOGIC ---
         function getStatusBadge(status) {
             if(status === 'PENDING') return 'bg-yellow-100 text-yellow-800 border-yellow-200';
             if(status === 'SHIPPED') return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -257,62 +253,6 @@
             }
         }
 
-        // --- BADGE NOTIFICATION LOGIC ---
-        async function pollForBadges() {
-            try {
-                const [ordersRes, usersRes, returnsRes, chatsRes] = await Promise.all([
-                    fetch(API_URL).catch(() => ({ ok: false })),
-                    fetch(API_USERS, { headers: authHeaders }).catch(() => ({ ok: false })),
-                    fetch(API_RETURNS).catch(() => ({ ok: false })),
-                    fetch(API_CHATS).catch(() => ({ ok: false }))
-                ]);
-
-                if(ordersRes.ok) {
-                    const orders = await ordersRes.json();
-                    window.liveDataCounts.order = orders.length;
-                    updateBadgeUI('badge-orders', orders.length, 'admin_known_order_count');
-                }
-                if(usersRes.ok) {
-                    const allUsers = await usersRes.json();
-                    const customersOnly = allUsers.filter(user => user.role !== "ADMIN");
-                    window.liveDataCounts.user = customersOnly.length;
-                    updateBadgeUI('badge-users', customersOnly.length, 'admin_known_user_count');
-                }
-                if(returnsRes.ok) {
-                    const returns = await returnsRes.json();
-                    window.liveDataCounts.return = returns.length;
-                    updateBadgeUI('badge-returns', returns.length, 'admin_known_return_count');
-                }
-                if(chatsRes.ok) {
-                    const chats = await chatsRes.json();
-                    const customerMessages = chats.filter(msg => msg.sender === 'customer');
-                    window.liveDataCounts.chat = customerMessages.length;
-                    updateBadgeUI('badge-chats', customerMessages.length, 'admin_known_chat_count');
-                }
-            } catch (error) {
-                console.error("Error polling for badges:", error);
-            }
-        }
-
-        function updateBadgeUI(elementId, currentCount, storageKey) {
-            const knownCount = parseInt(localStorage.getItem(storageKey)) || 0;
-            const diff = currentCount - knownCount;
-            const badgeEl = document.getElementById(elementId);
-            
-            if (diff > 0) {
-                badgeEl.innerText = diff > 99 ? '99+' : diff;
-                badgeEl.classList.remove('hidden');
-            } else {
-                badgeEl.classList.add('hidden');
-            }
-        }
-
-        function markAsRead(type) {
-            if (window.liveDataCounts[type] !== undefined) {
-                localStorage.setItem(`admin_known_${type}_count`, window.liveDataCounts[type]);
-            }
-        }
-
         function adminLogout() {
             if(confirm("Are you sure you want to log out?")) {
                 localStorage.removeItem("klipcart_admin_token");
@@ -321,10 +261,80 @@
             }
         }
 
+        // 🌟 UNIVERSAL BADGE NOTIFICATION SYSTEM 🌟
+        window.liveDataCounts = {};
+
+        async function syncAdminBadges() {
+            const ENDPOINTS = {
+                orders: "https://klipcart.onrender.com/api/orders",
+                users: "https://klipcart.onrender.com/api/admin/users",
+                returns: "https://klipcart.onrender.com/api/returns/admin/all",
+                chats: "https://klipcart.onrender.com/api/chat/admin/all"
+            };
+
+            const token = localStorage.getItem("klipcart_admin_token");
+            const headers = token ? { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } : {};
+
+            try {
+                const [ordersRes, usersRes, returnsRes, chatsRes] = await Promise.all([
+                    fetch(ENDPOINTS.orders).catch(() => ({ ok: false })),
+                    fetch(ENDPOINTS.users, { headers }).catch(() => ({ ok: false })),
+                    fetch(ENDPOINTS.returns).catch(() => ({ ok: false })),
+                    fetch(ENDPOINTS.chats).catch(() => ({ ok: false }))
+                ]);
+
+                if(ordersRes.ok) {
+                    const data = await ordersRes.json();
+                    window.liveDataCounts['order'] = data.length;
+                    updateUniversalBadge('badge-orders', data.length, 'admin_known_order_count');
+                }
+                if(usersRes.ok) {
+                    const data = await usersRes.json();
+                    const customersOnly = data.filter(u => u.role !== "ADMIN");
+                    window.liveDataCounts['user'] = customersOnly.length;
+                    updateUniversalBadge('badge-users', customersOnly.length, 'admin_known_user_count');
+                }
+                if(returnsRes.ok) {
+                    const data = await returnsRes.json();
+                    window.liveDataCounts['return'] = data.length;
+                    updateUniversalBadge('badge-returns', data.length, 'admin_known_return_count');
+                }
+                if(chatsRes.ok) {
+                    const data = await chatsRes.json();
+                    const customerMessages = data.filter(msg => msg.sender === 'customer');
+                    window.liveDataCounts['chat'] = customerMessages.length;
+                    updateUniversalBadge('badge-chats', customerMessages.length, 'admin_known_chat_count');
+                }
+            } catch(e) {
+                console.error("Badge Sync Error:", e);
+            }
+        }
+
+        function updateUniversalBadge(elementId, liveCount, storageKey) {
+            const knownCount = parseInt(localStorage.getItem(storageKey)) || 0;
+            const diff = liveCount - knownCount;
+            const badgeEl = document.getElementById(elementId);
+            
+            if(badgeEl) {
+                if(diff > 0) {
+                    badgeEl.innerText = diff > 99 ? '99+' : diff;
+                    badgeEl.classList.remove('hidden');
+                } else {
+                    badgeEl.classList.add('hidden');
+                }
+            }
+        }
+
+        window.markAsRead = function(type) {
+            if (window.liveDataCounts && window.liveDataCounts[type] !== undefined) {
+                localStorage.setItem(`admin_known_${type}_count`, window.liveDataCounts[type]);
+            }
+        };
+
         window.onload = () => {
             loadOrders();
-            pollForBadges();
-            setInterval(pollForBadges, 10000); // Check for new data every 10 seconds
+            syncAdminBadges();
+            setInterval(syncAdminBadges, 5000);
         };
     </script>
 </body>
