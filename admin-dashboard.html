@@ -29,24 +29,43 @@
             <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
+            
             <a href="admin-allproduct.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">inventory_2</span> All Products
             </a>
+            
             <a href="admin-add-product.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">add_box</span> Add Product
             </a>
-            <a href="admin-order.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">local_shipping</span> All Orders
+            
+            <a href="admin-order.html" onclick="markAsRead('order')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">local_shipping</span> All Orders
+                </div>
+                <span id="badge-orders" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-delivered.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+            
+            <a href="admin-delivered.html" onclick="markAsRead('return')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+                </div>
+                <span id="badge-returns" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-customers.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">people</span> Customers
+            
+            <a href="admin-customers.html" onclick="markAsRead('user')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">people</span> Customers
+                </div>
+                <span id="badge-users" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-chat.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">support_agent</span> Live Chat Support
+            
+            <a href="admin-chat.html" onclick="markAsRead('chat')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">support_agent</span> Live Chat
+                </div>
+                <span id="badge-chats" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
+            
             <div class="mt-auto pb-4">
                 <div class="h-px bg-slate-800 my-4"></div>
                 <button onclick="adminLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-400 transition-colors font-bold">
@@ -54,7 +73,6 @@
                 </button>
             </div>
                 
-            
         </nav>
     </aside>
 
@@ -148,17 +166,25 @@
         const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
         const API_ORDERS = "https://klipcart.onrender.com/api/orders";
         const API_USERS = "https://klipcart.onrender.com/api/admin/users";
+        const API_RETURNS = "https://klipcart.onrender.com/api/returns/admin/all";
+        const API_CHATS = "https://klipcart.onrender.com/api/chat/admin/all";
 
         let salesChartInstance = null;
 
-        // 🌟 Token Security Check 🌟
+        // Store live counts globally for badge logic
+        window.liveDataCounts = {
+            order: 0,
+            return: 0,
+            user: 0,
+            chat: 0
+        };
+
         const adminToken = localStorage.getItem("klipcart_admin_token");
         if (!adminToken) {
             alert("Unauthorized Access! Please login as Admin.");
             window.location.href = "admin-login.html";
         }
 
-        // 🌟 JWT Headers Setup 🌟
         const authHeaders = {
             "Authorization": `Bearer ${adminToken}`,
             "Content-Type": "application/json"
@@ -166,11 +192,13 @@
 
         async function loadDashboardData() {
             try {
-                // 🌟 Fetch All Data Concurrently with JWT Tokens 🌟
-                const [productsRes, ordersRes, usersRes] = await Promise.all([
+                // Fetch all endpoints concurrently
+                const [productsRes, ordersRes, usersRes, returnsRes, chatsRes] = await Promise.all([
                     fetch(API_PRODUCTS).catch(() => ({ ok: false })),
                     fetch(API_ORDERS).catch(() => ({ ok: false })),
-                    fetch(API_USERS, { headers: authHeaders }).catch(() => ({ ok: false })) // Token Added Here!
+                    fetch(API_USERS, { headers: authHeaders }).catch(() => ({ ok: false })),
+                    fetch(API_RETURNS).catch(() => ({ ok: false })),
+                    fetch(API_CHATS).catch(() => ({ ok: false }))
                 ]);
 
                 // 1. Process Products
@@ -181,27 +209,46 @@
                     document.getElementById('lowStockCount').innerText = lowStock;
                 }
 
-                // 2. Process Customers (Using JWT Token)
+                // 2. Process Users & Badges
                 if(usersRes.ok) {
                     const allUsers = await usersRes.json();
-                    // ADMIN ஐ தவிர்த்து கஸ்டமர்களை மட்டும் எண்ணுகிறோம்
                     const customersOnly = allUsers.filter(user => user.role !== "ADMIN");
                     document.getElementById('totalCustomers').innerText = customersOnly.length;
+                    
+                    window.liveDataCounts.user = customersOnly.length;
+                    updateBadgeUI('badge-users', customersOnly.length, 'admin_known_user_count');
                 } else {
                     document.getElementById('totalCustomers').innerText = "Error";
                 }
 
-                // 3. Process Orders & Revenue
+                // 3. Process Returns & Badges
+                if(returnsRes.ok) {
+                    const returns = await returnsRes.json();
+                    window.liveDataCounts.return = returns.length;
+                    updateBadgeUI('badge-returns', returns.length, 'admin_known_return_count');
+                }
+
+                // 4. Process Chats & Badges
+                if(chatsRes.ok) {
+                    const chats = await chatsRes.json();
+                    const customerMessages = chats.filter(msg => msg.sender === 'customer');
+                    window.liveDataCounts.chat = customerMessages.length;
+                    updateBadgeUI('badge-chats', customerMessages.length, 'admin_known_chat_count');
+                }
+
+                // 5. Process Orders & Revenue & Badges
                 if(ordersRes.ok) {
                     const orders = await ordersRes.json();
                     
+                    window.liveDataCounts.order = orders.length;
+                    updateBadgeUI('badge-orders', orders.length, 'admin_known_order_count');
+
                     let totalRev = 0;
                     orders.forEach(o => totalRev += o.totalAmount);
                     
                     document.getElementById('totalOrders').innerText = orders.length;
                     document.getElementById('totalRevenue').innerText = `₹${totalRev.toLocaleString('en-IN')}`;
 
-                    // Update Recent Orders UI (Top 5)
                     const recentList = document.getElementById('recentOrdersList');
                     recentList.innerHTML = "";
                     const recentOrders = orders.reverse().slice(0, 5);
@@ -226,7 +273,6 @@
                         });
                     }
 
-                    // Draw Chart
                     renderChart(orders);
                 }
 
@@ -235,7 +281,27 @@
             }
         }
 
-        // 🌟 Admin Logout Function 🌟
+        // Logic to update badge counter UI
+        function updateBadgeUI(elementId, currentCount, storageKey) {
+            const knownCount = parseInt(localStorage.getItem(storageKey)) || 0;
+            const diff = currentCount - knownCount;
+            const badgeEl = document.getElementById(elementId);
+            
+            if (diff > 0) {
+                badgeEl.innerText = diff > 99 ? '99+' : diff;
+                badgeEl.classList.remove('hidden');
+            } else {
+                badgeEl.classList.add('hidden');
+            }
+        }
+
+        // Logic to clear badge when link is clicked
+        function markAsRead(type) {
+            if (window.liveDataCounts[type] !== undefined) {
+                localStorage.setItem(`admin_known_${type}_count`, window.liveDataCounts[type]);
+            }
+        }
+
         function adminLogout() {
             if(confirm("Are you sure you want to log out?")) {
                 localStorage.removeItem("klipcart_admin_token");
@@ -244,11 +310,8 @@
             }
         }
 
-        // Chart.js Graph Rendering
         function renderChart(orders) {
             const ctx = document.getElementById('salesChart').getContext('2d');
-            
-            // Dummy Data for visual appeal (In real app, group orders by Date)
             const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             const data = [12000, 19000, 15000, 25000, 22000, 30000, 28000];
 
@@ -284,6 +347,8 @@
             });
         }
 
+        // Check for updates every 10 seconds without reloading the page
+        setInterval(loadDashboardData, 10000);
         window.onload = loadDashboardData;
     </script>
 </body>
