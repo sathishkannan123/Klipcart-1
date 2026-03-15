@@ -23,33 +23,54 @@
             <h2 class="text-2xl font-bold tracking-tight">Klipcart</h2>
         </div>
         <nav class="flex-1 px-4 space-y-2">
+            
             <a href="admin-dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
+            
             <a href="admin-allproduct.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">inventory_2</span> All Products
             </a>
+            
             <a href="admin-add-product.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">add_box</span> Add Product
             </a>
-            <a href="admin-order.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">local_shipping</span> All Orders
+            
+            <a href="admin-order.html" onclick="markAsRead('order')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">local_shipping</span> All Orders
+                </div>
+                <span id="badge-orders" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-600 text-white font-bold shadow-lg shadow-green-500/20">
-                <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+            
+            <a href="#" onclick="markAsRead('return')" class="flex items-center justify-between px-4 py-3 rounded-xl bg-green-600 text-white font-bold shadow-lg shadow-green-500/20 group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+                </div>
+                <span id="badge-returns" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-customers.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">people</span> Customers
+            
+            <a href="admin-customers.html" onclick="markAsRead('user')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">people</span> Customers
+                </div>
+                <span id="badge-users" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-chat.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">support_agent</span> Live Chat
+            
+            <a href="admin-chat.html" onclick="markAsRead('chat')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">support_agent</span> Live Chat
+                </div>
+                <span id="badge-chats" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
+            
             <div class="mt-auto pb-4">
                 <div class="h-px bg-slate-800 my-4"></div>
                 <button onclick="adminLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-400 transition-colors font-bold">
                     <span class="material-symbols-outlined">logout</span> Logout
                 </button>
             </div>
+            
         </nav>
     </aside>
 
@@ -84,7 +105,7 @@
                         </tr>
                     </thead>
                     <tbody id="deliveredTable" class="divide-y divide-slate-100">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -93,6 +114,17 @@
     <script>
         const API_ORDERS = "https://klipcart.onrender.com/api/orders";
         const API_RETURNS = "https://klipcart.onrender.com/api/returns";
+        const API_USERS = "https://klipcart.onrender.com/api/admin/users";
+        const API_CHATS = "https://klipcart.onrender.com/api/chat/admin/all";
+
+        // Global Badge State
+        window.liveDataCounts = { order: 0, return: 0, user: 0, chat: 0 };
+
+        const adminToken = localStorage.getItem("klipcart_admin_token");
+        const authHeaders = {
+            "Authorization": `Bearer ${adminToken}`,
+            "Content-Type": "application/json"
+        };
 
         function getInitials(name) {
             if(!name || name.trim() === '') return 'U';
@@ -177,7 +209,6 @@
                                     </span>
                                 </div>
                             `;
-                            // Date input added here
                             actionHtml = `
                                 <div class="flex flex-col gap-2 w-full">
                                     <input type="date" id="date_${returnRequest.id}" class="text-xs border border-slate-300 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 text-slate-700 w-full">
@@ -221,7 +252,6 @@
                             </td>
                             <td class="p-4 font-black text-lg text-slate-900">₹${order.totalAmount.toLocaleString('en-IN')}</td>
                             <td class="p-4">${statusBadge}</td>
-                            
                             <td class="p-4 text-center sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-100 z-10 shadow-[-5px_0px_10px_-5px_rgba(0,0,0,0.05)]">
                                 ${actionHtml}
                             </td>
@@ -237,7 +267,6 @@
         window.updateReturnStatus = async function(returnId, newStatus) {
             let pickupDate = "";
             
-            // Validate date if scheduling pickup
             if (newStatus === 'PICKUP_SCHEDULED') {
                 pickupDate = document.getElementById(`date_${returnId}`).value;
                 if (!pickupDate) {
@@ -281,6 +310,62 @@
             }
         }
 
+        // --- BADGE NOTIFICATION LOGIC ---
+        async function pollForBadges() {
+            try {
+                const [ordersRes, usersRes, returnsRes, chatsRes] = await Promise.all([
+                    fetch(API_ORDERS).catch(() => ({ ok: false })),
+                    fetch(API_USERS, { headers: authHeaders }).catch(() => ({ ok: false })),
+                    fetch(`${API_RETURNS}/admin/all`).catch(() => ({ ok: false })),
+                    fetch(API_CHATS).catch(() => ({ ok: false }))
+                ]);
+
+                if(ordersRes.ok) {
+                    const orders = await ordersRes.json();
+                    window.liveDataCounts.order = orders.length;
+                    updateBadgeUI('badge-orders', orders.length, 'admin_known_order_count');
+                }
+                if(usersRes.ok) {
+                    const allUsers = await usersRes.json();
+                    const customersOnly = allUsers.filter(user => user.role !== "ADMIN");
+                    window.liveDataCounts.user = customersOnly.length;
+                    updateBadgeUI('badge-users', customersOnly.length, 'admin_known_user_count');
+                }
+                if(returnsRes.ok) {
+                    const returns = await returnsRes.json();
+                    window.liveDataCounts.return = returns.length;
+                    updateBadgeUI('badge-returns', returns.length, 'admin_known_return_count');
+                }
+                if(chatsRes.ok) {
+                    const chats = await chatsRes.json();
+                    const customerMessages = chats.filter(msg => msg.sender === 'customer');
+                    window.liveDataCounts.chat = customerMessages.length;
+                    updateBadgeUI('badge-chats', customerMessages.length, 'admin_known_chat_count');
+                }
+            } catch (error) {
+                console.error("Error polling for badges:", error);
+            }
+        }
+
+        function updateBadgeUI(elementId, currentCount, storageKey) {
+            const knownCount = parseInt(localStorage.getItem(storageKey)) || 0;
+            const diff = currentCount - knownCount;
+            const badgeEl = document.getElementById(elementId);
+            
+            if (diff > 0) {
+                badgeEl.innerText = diff > 99 ? '99+' : diff;
+                badgeEl.classList.remove('hidden');
+            } else {
+                badgeEl.classList.add('hidden');
+            }
+        }
+
+        function markAsRead(type) {
+            if (window.liveDataCounts[type] !== undefined) {
+                localStorage.setItem(`admin_known_${type}_count`, window.liveDataCounts[type]);
+            }
+        }
+
         function adminLogout() {
             if(confirm("Are you sure you want to log out?")) {
                 localStorage.removeItem("klipcart_admin_token");
@@ -289,7 +374,11 @@
             }
         }
 
-        window.onload = loadDeliveredOrders;
+        window.onload = () => {
+            loadDeliveredOrders();
+            pollForBadges();
+            setInterval(pollForBadges, 10000); // Check for new data every 10 seconds
+        };
     </script>
 </body>
 </html>

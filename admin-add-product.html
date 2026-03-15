@@ -25,28 +25,48 @@
             <span class="material-symbols-outlined text-blue-500 text-3xl">shopping_basket</span>
             <h2 class="text-2xl font-bold tracking-tight">Klipcart</h2>
         </div>
-        <nav class="flex-1 px-4 space-y-2">
+        <nav class="flex-1 px-4 space-y-2 flex flex-col">
+            
             <a href="admin-dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
+            
             <a href="admin-allproduct.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">inventory_2</span> All Products
             </a>
+            
             <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20">
                 <span class="material-symbols-outlined">add_box</span> Add Product
             </a>
-            <a href="admin-order.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">local_shipping</span> All Orders
+            
+            <a href="admin-order.html" onclick="markAsRead('order')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">local_shipping</span> All Orders
+                </div>
+                <span id="badge-orders" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-delivered.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+            
+            <a href="admin-delivered.html" onclick="markAsRead('return')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+                </div>
+                <span id="badge-returns" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-customers.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">people</span> Customers
+            
+            <a href="admin-customers.html" onclick="markAsRead('user')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">people</span> Customers
+                </div>
+                <span id="badge-users" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-chat.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">support_agent</span> Live Chat Support
+            
+            <a href="admin-chat.html" onclick="markAsRead('chat')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">support_agent</span> Live Chat
+                </div>
+                <span id="badge-chats" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
+            
             <div class="mt-auto pb-4">
                 <div class="h-px bg-slate-800 my-4"></div>
                 <button onclick="adminLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-400 transition-colors font-bold">
@@ -199,84 +219,165 @@
     </main>
 
     <script>
-    // உங்கள் Cloud Name மற்றும் சரியான Preset Name
-    const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtytxv0yl/image/upload";
-    const CLOUDINARY_PRESET = "klipcart-preset";
+        // API Endpoints for Badge Notifications
+        const API_ORDERS = "https://klipcart.onrender.com/api/orders";
+        const API_RETURNS = "https://klipcart.onrender.com/api/returns/admin/all";
+        const API_USERS = "https://klipcart.onrender.com/api/admin/users";
+        const API_CHATS = "https://klipcart.onrender.com/api/chat/admin/all";
 
-    document.getElementById("productForm").addEventListener("submit", async function(e) {
-        e.preventDefault();
-        
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Uploading Image...`;
-        submitBtn.disabled = true;
+        // Global Badge State
+        window.liveDataCounts = { order: 0, return: 0, user: 0, chat: 0 };
 
-        const formData = new FormData(this);
-        const imageFile = formData.get("image");
-        let finalImageUrl = "";
-
-        try {
-            // 1. Cloudinary-க்கு அப்லோட் செய்தல்
-            if (imageFile && imageFile.size > 0) {
-                const cloudData = new FormData();
-                cloudData.append("file", imageFile);
-                cloudData.append("upload_preset", CLOUDINARY_PRESET);
-
-                const cloudRes = await fetch(CLOUDINARY_URL, {
-                    method: "POST",
-                    body: cloudData
-                });
-
-                if (cloudRes.ok) {
-                    const cloudJson = await cloudRes.json();
-                    finalImageUrl = cloudJson.secure_url; 
-                } else {
-                    // Cloudinary-ல் பிரச்சனை என்றால் என்ன பிரச்சனை என்று காட்டும்
-                    const errorDetails = await cloudRes.json();
-                    alert("☁️ Cloudinary Error: " + (errorDetails.error ? errorDetails.error.message : "Unknown Error"));
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    return; // கோடை இங்கேயே நிறுத்திவிடும்
-                }
-            }
-
-            // 2. Render Backend-க்கு அனுப்புதல்
-            const urlBlob = new Blob(["image_url_placeholder"], { type: "text/plain" });
-            const tempFile = new File([urlBlob], finalImageUrl, { type: "image/png" });
-            formData.set("image", tempFile);
-
-            submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Saving in Database...`;
-
-            const response = await fetch("https://klipcart.onrender.com/api/products", {
-                method: "POST",
-                body: formData
-            });
-
-            if (response.ok) {
-                alert("🎉 Product Added Successfully!");
-                this.reset();
-            } else {
-                // Backend-ல் பிரச்சனை என்றால் அந்த எர்ரரைக் காட்டும்
-                const backendError = await response.text();
-                alert("⚙️ Backend Error (" + response.status + "): " + backendError);
-            }
-        } catch (error) {
-            // இன்டர்நெட் கட் ஆனால் இதைக் காட்டும்
-            console.error(error);
-            alert("❌ System Error: " + error.message);
-        } finally {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }
-    });
-
-    function adminLogout() {
-        if(confirm("Are you sure you want to log out?")) {
-            localStorage.removeItem("klipcart_admin_token");
-            localStorage.removeItem("klipcart_admin_session");
+        const adminToken = localStorage.getItem("klipcart_admin_token");
+        if (!adminToken) {
+            alert("Unauthorized Access! Please login as Admin.");
             window.location.href = "admin-login.html";
         }
-    }
-</script>
+
+        const authHeaders = {
+            "Authorization": `Bearer ${adminToken}`,
+            "Content-Type": "application/json"
+        };
+
+        // Your Cloudinary Keys
+        const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtytxv0yl/image/upload";
+        const CLOUDINARY_PRESET = "klipcart-preset";
+
+        document.getElementById("productForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Uploading Image...`;
+            submitBtn.disabled = true;
+
+            const formData = new FormData(this);
+            const imageFile = formData.get("image");
+            let finalImageUrl = "";
+
+            try {
+                // 1. Upload to Cloudinary
+                if (imageFile && imageFile.size > 0) {
+                    const cloudData = new FormData();
+                    cloudData.append("file", imageFile);
+                    cloudData.append("upload_preset", CLOUDINARY_PRESET);
+
+                    const cloudRes = await fetch(CLOUDINARY_URL, {
+                        method: "POST",
+                        body: cloudData
+                    });
+
+                    if (cloudRes.ok) {
+                        const cloudJson = await cloudRes.json();
+                        finalImageUrl = cloudJson.secure_url; 
+                    } else {
+                        // Show Cloudinary upload error details
+                        const errorDetails = await cloudRes.json();
+                        alert("☁️ Cloudinary Error: " + (errorDetails.error ? errorDetails.error.message : "Unknown Error"));
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        return; // Stop execution here
+                    }
+                }
+
+                // 2. Send to Render Backend
+                const urlBlob = new Blob(["image_url_placeholder"], { type: "text/plain" });
+                const tempFile = new File([urlBlob], finalImageUrl, { type: "image/png" });
+                formData.set("image", tempFile);
+
+                submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Saving in Database...`;
+
+                const response = await fetch("https://klipcart.onrender.com/api/products", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert("🎉 Product Added Successfully!");
+                    this.reset();
+                } else {
+                    // Show backend error if any
+                    const backendError = await response.text();
+                    alert("⚙️ Backend Error (" + response.status + "): " + backendError);
+                }
+            } catch (error) {
+                // Handle network connection errors
+                console.error(error);
+                alert("❌ System Error: " + error.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // --- BADGE NOTIFICATION LOGIC ---
+        async function pollForBadges() {
+            try {
+                const [ordersRes, usersRes, returnsRes, chatsRes] = await Promise.all([
+                    fetch(API_ORDERS).catch(() => ({ ok: false })),
+                    fetch(API_USERS, { headers: authHeaders }).catch(() => ({ ok: false })),
+                    fetch(API_RETURNS).catch(() => ({ ok: false })),
+                    fetch(API_CHATS).catch(() => ({ ok: false }))
+                ]);
+
+                if(ordersRes.ok) {
+                    const orders = await ordersRes.json();
+                    window.liveDataCounts.order = orders.length;
+                    updateBadgeUI('badge-orders', orders.length, 'admin_known_order_count');
+                }
+                if(usersRes.ok) {
+                    const allUsers = await usersRes.json();
+                    const customersOnly = allUsers.filter(user => user.role !== "ADMIN");
+                    window.liveDataCounts.user = customersOnly.length;
+                    updateBadgeUI('badge-users', customersOnly.length, 'admin_known_user_count');
+                }
+                if(returnsRes.ok) {
+                    const returns = await returnsRes.json();
+                    window.liveDataCounts.return = returns.length;
+                    updateBadgeUI('badge-returns', returns.length, 'admin_known_return_count');
+                }
+                if(chatsRes.ok) {
+                    const chats = await chatsRes.json();
+                    const customerMessages = chats.filter(msg => msg.sender === 'customer');
+                    window.liveDataCounts.chat = customerMessages.length;
+                    updateBadgeUI('badge-chats', customerMessages.length, 'admin_known_chat_count');
+                }
+            } catch (error) {
+                console.error("Error polling for badges:", error);
+            }
+        }
+
+        function updateBadgeUI(elementId, currentCount, storageKey) {
+            const knownCount = parseInt(localStorage.getItem(storageKey)) || 0;
+            const diff = currentCount - knownCount;
+            const badgeEl = document.getElementById(elementId);
+            
+            if (diff > 0) {
+                badgeEl.innerText = diff > 99 ? '99+' : diff;
+                badgeEl.classList.remove('hidden');
+            } else {
+                badgeEl.classList.add('hidden');
+            }
+        }
+
+        function markAsRead(type) {
+            if (window.liveDataCounts[type] !== undefined) {
+                localStorage.setItem(`admin_known_${type}_count`, window.liveDataCounts[type]);
+            }
+        }
+
+        function adminLogout() {
+            if(confirm("Are you sure you want to log out?")) {
+                localStorage.removeItem("klipcart_admin_token");
+                localStorage.removeItem("klipcart_admin_session");
+                window.location.href = "admin-login.html";
+            }
+        }
+
+        window.onload = () => {
+            pollForBadges();
+            setInterval(pollForBadges, 10000); // Check for new data every 10 seconds
+        };
+    </script>
 </body>
 </html>

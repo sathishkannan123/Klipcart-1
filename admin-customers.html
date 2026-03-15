@@ -26,33 +26,54 @@
             <h2 class="text-2xl font-bold tracking-tight">Klipcart</h2>
         </div>
         <nav class="flex-1 px-4 space-y-2">
+            
             <a href="admin-dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
+            
             <a href="admin-allproduct.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">inventory_2</span> All Products
             </a>
+            
             <a href="admin-add-product.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">add_box</span> Add Product
             </a>
-            <a href="admin-order.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">local_shipping</span> All Orders
+            
+            <a href="admin-order.html" onclick="markAsRead('order')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">local_shipping</span> All Orders
+                </div>
+                <span id="badge-orders" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-delivered.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+            
+            <a href="admin-delivered.html" onclick="markAsRead('return')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">task_alt</span> Delivered Orders
+                </div>
+                <span id="badge-returns" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20">
-                <span class="material-symbols-outlined">people</span> Customers
+            
+            <a href="#" onclick="markAsRead('user')" class="flex items-center justify-between px-4 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20 group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">people</span> Customers
+                </div>
+                <span id="badge-users" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
-            <a href="admin-chat.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
-                <span class="material-symbols-outlined">support_agent</span> Live Chat Support
+            
+            <a href="admin-chat.html" onclick="markAsRead('chat')" class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">support_agent</span> Live Chat
+                </div>
+                <span id="badge-chats" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-sm">0</span>
             </a>
+            
             <div class="mt-auto pb-4">
                 <div class="h-px bg-slate-800 my-4"></div>
                 <button onclick="adminLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-400 transition-colors font-bold">
                     <span class="material-symbols-outlined">logout</span> Logout
                 </button>
             </div>
+            
         </nav>
     </aside>
 
@@ -75,8 +96,8 @@
         </header>
 
         <div class="p-8 flex-1 overflow-auto">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <table class="w-full text-left border-collapse whitespace-nowrap">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto w-full">
+                <table class="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
                             <th class="p-4 font-semibold w-20">ID</th>
@@ -87,7 +108,7 @@
                         </tr>
                     </thead>
                     <tbody id="customerTable" class="divide-y divide-slate-100">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -95,15 +116,23 @@
 
     <script>
         const API_URL = "https://klipcart.onrender.com/api/admin/users";
+        const API_ORDERS = "https://klipcart.onrender.com/api/orders";
+        const API_RETURNS = "https://klipcart.onrender.com/api/returns/admin/all";
+        const API_CHATS = "https://klipcart.onrender.com/api/chat/admin/all";
 
-        // 🌟 LocalStorage-ல் இருந்து Admin Token-ஐ எடுக்கிறோம் 🌟
+        // Global Badge State
+        window.liveDataCounts = { order: 0, return: 0, user: 0, chat: 0 };
+
         const adminToken = localStorage.getItem("klipcart_admin_token");
-
-        // Admin Token இல்லை என்றால் Login பக்கத்திற்கு அனுப்புகிறோம்
         if (!adminToken) {
             alert("Unauthorized Access! Please login as Admin.");
             window.location.href = "admin-login.html";
         }
+
+        const authHeaders = {
+            "Authorization": `Bearer ${adminToken}`,
+            "Content-Type": "application/json"
+        };
 
         function getInitials(name) {
             if(!name) return 'U';
@@ -112,13 +141,9 @@
 
         async function loadCustomers() {
             try {
-                // 🌟 Fetch API-ல் Token-ஐ அனுப்புகிறோம் 🌟
                 const response = await fetch(API_URL, {
                     method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${adminToken}`,
-                        "Content-Type": "application/json"
-                    }
+                    headers: authHeaders
                 });
 
                 if (!response.ok) {
@@ -131,11 +156,9 @@
                 }
 
                 const customers = await response.json();
-                
                 const tbody = document.getElementById("customerTable");
                 tbody.innerHTML = "";
 
-                // ADMIN-ஐ தவிர்த்து மற்ற யூசர்களை (Customers) மட்டும் காட்டுகிறோம்
                 const filteredCustomers = customers.filter(user => user.role !== "ADMIN");
 
                 if(filteredCustomers.length === 0) {
@@ -207,12 +230,9 @@
         async function deleteCustomer(id) {
             if(confirm("Are you sure you want to permanently delete this customer account?")) {
                 try {
-                    // 🌟 Delete API-லும் Token-ஐ அனுப்புகிறோம் 🌟
                     const response = await fetch(`${API_URL}/${id}`, { 
                         method: "DELETE",
-                        headers: {
-                            "Authorization": `Bearer ${adminToken}`
-                        }
+                        headers: authHeaders
                     });
 
                     if(response.ok) {
@@ -225,7 +245,63 @@
                 }
             }
         }
-        // 🌟 Admin Logout Function 🌟
+
+        // --- BADGE NOTIFICATION LOGIC ---
+        async function pollForBadges() {
+            try {
+                const [ordersRes, usersRes, returnsRes, chatsRes] = await Promise.all([
+                    fetch(API_ORDERS).catch(() => ({ ok: false })),
+                    fetch(API_URL, { headers: authHeaders }).catch(() => ({ ok: false })),
+                    fetch(API_RETURNS).catch(() => ({ ok: false })),
+                    fetch(API_CHATS).catch(() => ({ ok: false }))
+                ]);
+
+                if(ordersRes.ok) {
+                    const orders = await ordersRes.json();
+                    window.liveDataCounts.order = orders.length;
+                    updateBadgeUI('badge-orders', orders.length, 'admin_known_order_count');
+                }
+                if(usersRes.ok) {
+                    const allUsers = await usersRes.json();
+                    const customersOnly = allUsers.filter(user => user.role !== "ADMIN");
+                    window.liveDataCounts.user = customersOnly.length;
+                    updateBadgeUI('badge-users', customersOnly.length, 'admin_known_user_count');
+                }
+                if(returnsRes.ok) {
+                    const returns = await returnsRes.json();
+                    window.liveDataCounts.return = returns.length;
+                    updateBadgeUI('badge-returns', returns.length, 'admin_known_return_count');
+                }
+                if(chatsRes.ok) {
+                    const chats = await chatsRes.json();
+                    const customerMessages = chats.filter(msg => msg.sender === 'customer');
+                    window.liveDataCounts.chat = customerMessages.length;
+                    updateBadgeUI('badge-chats', customerMessages.length, 'admin_known_chat_count');
+                }
+            } catch (error) {
+                console.error("Error polling for badges:", error);
+            }
+        }
+
+        function updateBadgeUI(elementId, currentCount, storageKey) {
+            const knownCount = parseInt(localStorage.getItem(storageKey)) || 0;
+            const diff = currentCount - knownCount;
+            const badgeEl = document.getElementById(elementId);
+            
+            if (diff > 0) {
+                badgeEl.innerText = diff > 99 ? '99+' : diff;
+                badgeEl.classList.remove('hidden');
+            } else {
+                badgeEl.classList.add('hidden');
+            }
+        }
+
+        function markAsRead(type) {
+            if (window.liveDataCounts[type] !== undefined) {
+                localStorage.setItem(`admin_known_${type}_count`, window.liveDataCounts[type]);
+            }
+        }
+
         function adminLogout() {
             if(confirm("Are you sure you want to log out?")) {
                 localStorage.removeItem("klipcart_admin_token");
@@ -234,7 +310,11 @@
             }
         }
 
-        window.onload = loadCustomers;
+        window.onload = () => {
+            loadCustomers();
+            pollForBadges();
+            setInterval(pollForBadges, 10000); // Check for new data every 10 seconds
+        };
 
     </script>
 </body>
