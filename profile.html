@@ -263,11 +263,25 @@
             });
         }
 
-        function logout(){
-            localStorage.clear();
-            localStorage.removeItem("klipcart_cart");
-            localStorage.removeItem("klipcart_wishlist");
-            window.location.href="index.html"; // Redirect to your home page
+        async function logout() {
+            const email = localStorage.getItem("customerEmail");
+            
+            
+            if(email) {
+                try {
+                    await fetch(`https://klipcart.onrender.com/api/logout?email=${email}`, { 
+                        method: 'POST' 
+                    });
+                } catch(e) {
+                    console.log("Logout API error:", e);
+                }
+            }
+
+            
+            localStorage.removeItem("customerEmail");
+            localStorage.removeItem("customerName");
+            localStorage.removeItem("klipcart_token");
+            window.location.href = "login.html";
         }
     </script>
 </body>
