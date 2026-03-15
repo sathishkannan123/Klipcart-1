@@ -65,22 +65,22 @@
                     <p class="text-xs text-slate-500 font-medium">History of successfully completed orders</p>
                 </div>
             </div>
-            <button onclick="loadDeliveredOrders()" class="flex items-center gap-2 text-green-600 font-bold hover:text-green-800 transition bg-green-50 px-4 py-2 rounded-lg">
+            <button onclick="loadDeliveredOrders()" class="flex items-center gap-2 text-green-600 font-bold hover:text-green-800 transition bg-green-50 px-4 py-2 rounded-lg shadow-sm">
                 <span class="material-symbols-outlined text-[20px]">refresh</span> Refresh List
             </button>
         </header>
 
-        <div class="p-8 flex-1 overflow-auto">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <table class="w-full text-left border-collapse whitespace-nowrap">
+        <div class="p-8 flex-1 overflow-auto bg-slate-50/50">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto w-full">
+                <table class="w-full text-left border-collapse whitespace-nowrap min-w-[1100px]">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
-                            <th class="p-4 font-semibold w-40">Order Info & Products</th>
-                            <th class="p-4 font-semibold">Customer Details</th>
-                            <th class="p-4 font-semibold">Shipping Details</th>
-                            <th class="p-4 font-semibold">Total Amount</th>
-                            <th class="p-4 font-semibold">Status</th>
-                            <th class="p-4 font-semibold text-center">Action</th>
+                            <th class="p-4 font-semibold w-64">Order Info & Products</th>
+                            <th class="p-4 font-semibold w-56">Customer Details</th>
+                            <th class="p-4 font-semibold w-56">Shipping Details</th>
+                            <th class="p-4 font-semibold w-32">Total Amount</th>
+                            <th class="p-4 font-semibold w-64">Status</th>
+                            <th class="p-4 font-semibold w-40 text-center sticky right-0 bg-slate-50 border-l border-slate-200 z-10 shadow-[-5px_0px_10px_-5px_rgba(0,0,0,0.05)]">Action</th>
                         </tr>
                     </thead>
                     <tbody id="deliveredTable" class="divide-y divide-slate-100">
@@ -94,7 +94,6 @@
         const API_ORDERS = "https://klipcart.onrender.com/api/orders";
         const API_RETURNS = "https://klipcart.onrender.com/api/returns";
 
-        // Helper to get initials for avatar
         function getInitials(name) {
             if(!name || name.trim() === '') return 'U';
             return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -102,7 +101,6 @@
 
         async function loadDeliveredOrders() {
             try {
-                // Fetch all Orders and all Returns from Database
                 const [resOrders, resReturns] = await Promise.all([
                     fetch(API_ORDERS),
                     fetch(`${API_RETURNS}/admin/all`)
@@ -119,7 +117,6 @@
                 const tbody = document.getElementById("deliveredTable");
                 tbody.innerHTML = "";
 
-                // Filter only DELIVERED orders
                 const deliveredOrders = allOrders.filter(order => order.status === 'DELIVERED');
                 
                 if(deliveredOrders.length === 0) {
@@ -136,7 +133,6 @@
                     const pNames = order.productNames || "Product details not available";
                     const initials = getInitials(cName);
                     
-                    // Check if this order has a return request in the database
                     const returnRequest = allReturns.find(r => r.orderId === order.id.toString());
                     let statusBadge = "";
                     let actionHtml = "";
@@ -160,6 +156,9 @@
                                     <span class="text-xs text-blue-600 font-bold whitespace-normal break-words leading-relaxed">
                                         Reason: ${returnRequest.reason}
                                     </span>
+                                    <span class="text-xs text-blue-800 font-black mt-1">
+                                        Date: ${returnRequest.pickupDate}
+                                    </span>
                                 </div>
                             `;
                             actionHtml = `
@@ -168,7 +167,6 @@
                                 </button>
                             `;
                         } else {
-                            // RETURN_REQUESTED
                             statusBadge = `
                                 <div class="flex flex-col gap-1 w-full max-w-[280px]">
                                     <span class="px-2 py-1 rounded-md text-[10px] font-black border bg-pink-100 text-pink-700 border-pink-200 inline-flex items-center gap-1 w-max mb-1">
@@ -179,10 +177,14 @@
                                     </span>
                                 </div>
                             `;
+                            // Date input added here
                             actionHtml = `
-                                <button onclick="updateReturnStatus(${returnRequest.id}, 'PICKUP_SCHEDULED')" class="bg-blue-600 text-white text-xs px-3 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center gap-1 w-full">
-                                    <span class="material-symbols-outlined text-[14px]">event_available</span> Approve & Schedule
-                                </button>
+                                <div class="flex flex-col gap-2 w-full">
+                                    <input type="date" id="date_${returnRequest.id}" class="text-xs border border-slate-300 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 text-slate-700 w-full">
+                                    <button onclick="updateReturnStatus(${returnRequest.id}, 'PICKUP_SCHEDULED')" class="bg-blue-600 text-white text-xs px-3 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center gap-1 w-full">
+                                        <span class="material-symbols-outlined text-[14px]">event_available</span> Approve & Schedule
+                                    </button>
+                                </div>
                             `;
                         }
                     } else {
@@ -219,7 +221,8 @@
                             </td>
                             <td class="p-4 font-black text-lg text-slate-900">₹${order.totalAmount.toLocaleString('en-IN')}</td>
                             <td class="p-4">${statusBadge}</td>
-                            <td class="p-4 text-center">
+                            
+                            <td class="p-4 text-center sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-100 z-10 shadow-[-5px_0px_10px_-5px_rgba(0,0,0,0.05)]">
                                 ${actionHtml}
                             </td>
                         </tr>
@@ -231,15 +234,28 @@
             }
         }
 
-        // Update Return Status in Database
         window.updateReturnStatus = async function(returnId, newStatus) {
-            let confirmMsg = newStatus === 'PICKUP_SCHEDULED' ? "Approve return and schedule pickup?" : "Confirm item received and process refund?";
+            let pickupDate = "";
+            
+            // Validate date if scheduling pickup
+            if (newStatus === 'PICKUP_SCHEDULED') {
+                pickupDate = document.getElementById(`date_${returnId}`).value;
+                if (!pickupDate) {
+                    alert("Please select a pickup date first!");
+                    return;
+                }
+            }
+
+            let confirmMsg = newStatus === 'PICKUP_SCHEDULED' ? `Approve return and schedule pickup for ${pickupDate}?` : "Confirm item received and process refund?";
             
             if(confirm(confirmMsg)) {
                 try {
-                    const response = await fetch(`${API_RETURNS}/admin/update/${returnId}?status=${newStatus}`, {
-                        method: 'PUT'
-                    });
+                    let url = `${API_RETURNS}/admin/update/${returnId}?status=${newStatus}`;
+                    if (pickupDate) {
+                        url += `&pickupDate=${pickupDate}`;
+                    }
+
+                    const response = await fetch(url, { method: 'PUT' });
 
                     if(response.ok) {
                         alert(`✅ Return status updated to ${newStatus}`);
@@ -254,7 +270,6 @@
             }
         }
 
-        // Delete Order from Database
         async function deleteOrder(id) {
             if(confirm("Are you sure you want to delete this delivered order record?")) {
                 try {
@@ -266,7 +281,6 @@
             }
         }
 
-        // Admin Logout
         function adminLogout() {
             if(confirm("Are you sure you want to log out?")) {
                 localStorage.removeItem("klipcart_admin_token");

@@ -61,7 +61,6 @@
             container.innerHTML = `<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 border-t-transparent"></div></div>`;
 
             try {
-                // Fetch Orders, Products, and Returns from the Database simultaneously
                 const [resOrders, resProducts, resReturns] = await Promise.all([
                     fetch(API_ORDERS),
                     fetch(API_PRODUCTS),
@@ -78,14 +77,11 @@
                     myReturns = await resReturns.json();
                 }
                 
-                // Array of Order IDs that have been returned
                 const returnedOrderIds = myReturns.map(r => r.orderId);
+                const myOrdersList = allOrders.filter(order => order.customerEmail === loggedInEmail);
+                myOrdersList.reverse();
 
-                // Filter orders belonging only to the logged-in user
-                const myOrders = allOrders.filter(order => order.customerEmail === loggedInEmail);
-                myOrders.reverse();
-
-                if(myOrders.length === 0) {
+                if(myOrdersList.length === 0) {
                     container.innerHTML = `
                         <div class="bg-white p-10 rounded-3xl border border-slate-200 text-center shadow-sm">
                             <span class="material-symbols-outlined text-6xl text-slate-300 mb-4">inventory_2</span>
@@ -97,17 +93,15 @@
 
                 container.innerHTML = "";
                 
-                myOrders.forEach(order => {
+                myOrdersList.forEach(order => {
                     const formattedOrderId = `KLIP-${order.id}`;
                     const formattedTotal = `₹${Number(order.totalAmount).toLocaleString('en-IN')}`;
-                    
                     const productsList = order.productNames.split(',').map(prod => prod.trim());
                     
                     let itemsHtml = "";
                     productsList.forEach(productString => {
                         let pName = productString;
                         let pQty = "1";
-                        
                         if (productString.includes("(Qty:")) {
                             const parts = productString.split("(Qty:");
                             pName = parts[0].trim();
@@ -133,10 +127,8 @@
                     let statusInfo = "";
                     let actionButtons = "";
                     
-                    // Check if this specific order exists in the Returns Database
                     const isReturned = returnedOrderIds.includes(order.id.toString());
                     const returnDetails = myReturns.find(r => r.orderId === order.id.toString());
-
                     const currentStatus = order.status || 'PENDING';
 
                     if (currentStatus === 'DELIVERED') {
@@ -147,7 +139,12 @@
                                 statusInfo = `<div class="flex items-center gap-1.5 text-purple-700 font-bold text-sm bg-purple-100 px-3 py-2 rounded-lg border border-purple-200"><span class="material-symbols-outlined text-[18px]">verified</span> Refund Processed</div>`;
                                 actionButtons = `<span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">Return Closed</span>`;
                             } else if (retStatus === "PICKUP_SCHEDULED") {
-                                statusInfo = `<div class="flex items-center gap-1.5 text-blue-700 font-bold text-sm bg-blue-100 px-3 py-2 rounded-lg border border-blue-200"><span class="material-symbols-outlined text-[18px]">local_shipping</span> Pickup Scheduled</div>`;
+                                // Format the date received from database
+                                let formattedDate = returnDetails.pickupDate || "Date not set";
+                                if (returnDetails.pickupDate) {
+                                    formattedDate = new Date(returnDetails.pickupDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                }
+                                statusInfo = `<div class="flex items-center gap-1.5 text-blue-700 font-bold text-sm bg-blue-100 px-3 py-2 rounded-lg border border-blue-200"><span class="material-symbols-outlined text-[18px]">local_shipping</span> Pickup: ${formattedDate}</div>`;
                                 actionButtons = `<span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">Agent will contact you</span>`;
                             } else {
                                 statusInfo = `<div class="flex items-center gap-1.5 text-pink-600 font-bold text-sm bg-pink-50 px-3 py-2 rounded-lg border border-pink-100"><span class="material-symbols-outlined text-[18px]">assignment_return</span> Return Requested</div>`;
