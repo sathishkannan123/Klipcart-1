@@ -96,7 +96,7 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
                     <div>
                         <h3 class="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">Total Revenue</h3>
-                        <p id="totalRevenue" class="text-3xl font-black text-slate-900">₹0</p>
+                        <p id="totalRevenue" class="text-3xl font-black text-green-600">₹0</p>
                     </div>
                     <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-green-600">
                         <span class="material-symbols-outlined text-3xl">payments</span>
@@ -106,7 +106,7 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
                     <div>
                         <h3 class="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">Total Orders</h3>
-                        <p id="totalOrders" class="text-3xl font-black text-slate-900">0</p>
+                        <p id="totalOrders" class="text-3xl font-black text-blue-600">0</p>
                     </div>
                     <div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
                         <span class="material-symbols-outlined text-3xl">shopping_cart</span>
@@ -116,7 +116,7 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
                     <div>
                         <h3 class="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">Total Customers</h3>
-                        <p id="totalCustomers" class="text-3xl font-black text-slate-900">Loading...</p>
+                        <p id="totalCustomers" class="text-3xl font-black text-purple-600">Loading...</p>
                     </div>
                     <div class="w-14 h-14 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
                         <span class="material-symbols-outlined text-3xl">group</span>
@@ -125,11 +125,11 @@
 
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
                     <div>
-                        <h3 class="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">Low Stock Items</h3>
-                        <p id="lowStockCount" class="text-3xl font-black text-red-600">0</p>
+                        <h3 class="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">Returned Amount</h3>
+                        <p id="returnedAmount" class="text-3xl font-black text-red-600">-₹0</p>
                     </div>
                     <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center text-red-600">
-                        <span class="material-symbols-outlined text-3xl">warning</span>
+                        <span class="material-symbols-outlined text-3xl">assignment_return</span>
                     </div>
                 </div>
             </div>
@@ -138,7 +138,7 @@
                 
                 <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-blue-600">trending_up</span> Sales Overview
+                        <span class="material-symbols-outlined text-blue-600">trending_up</span> Sales Overview (Delivered Only)
                     </h2>
                     <div class="relative h-72 w-full">
                         <canvas id="salesChart"></canvas>
@@ -163,7 +163,6 @@
     </main>
 
     <script>
-        const API_PRODUCTS = "https://klipcart.onrender.com/api/products";
         const API_ORDERS = "https://klipcart.onrender.com/api/orders";
         const API_USERS = "https://klipcart.onrender.com/api/admin/users";
         const API_RETURNS = "https://klipcart.onrender.com/api/returns/admin/all";
@@ -184,40 +183,51 @@
 
         async function loadDashboardData() {
             try {
-                // Fetch all endpoints concurrently
-                const [productsRes, ordersRes, usersRes] = await Promise.all([
-                    fetch(API_PRODUCTS).catch(() => ({ ok: false })),
+                // Fetch necessary endpoints
+                const [ordersRes, usersRes, returnsRes] = await Promise.all([
                     fetch(API_ORDERS).catch(() => ({ ok: false })),
-                    fetch(API_USERS, { headers: authHeaders }).catch(() => ({ ok: false }))
+                    fetch(API_USERS, { headers: authHeaders }).catch(() => ({ ok: false })),
+                    fetch(API_RETURNS).catch(() => ({ ok: false }))
                 ]);
 
-                // 1. Process Products
-                if(productsRes.ok) {
-                    const products = await productsRes.json();
-                    let lowStock = 0;
-                    products.forEach(p => { if(p.stock < 10) lowStock++; });
-                    document.getElementById('lowStockCount').innerText = lowStock;
-                }
-
-                // 2. Process Users 
+                // 1. Process Users
                 if(usersRes.ok) {
                     const allUsers = await usersRes.json();
                     const customersOnly = allUsers.filter(user => user.role !== "ADMIN");
                     document.getElementById('totalCustomers').innerText = customersOnly.length;
-                } else {
-                    document.getElementById('totalCustomers').innerText = "Error";
                 }
 
-                // 3. Process Orders & Revenue & Chart
+                // 2. Extract Returns Data
+                let returnsList = [];
+                if(returnsRes.ok) {
+                    returnsList = await returnsRes.json();
+                }
+
+                // 3. Process Orders, Revenue, and Returns
                 if(ordersRes.ok) {
                     const orders = await ordersRes.json();
                     
                     let totalRev = 0;
-                    orders.forEach(o => totalRev += o.totalAmount);
+                    let returnedRev = 0;
+
+                    orders.forEach(o => {
+                        const returnedItem = returnsList.find(r => r.orderId == o.id);
+                        
+                        // 🌟 முக்கிய மாற்றம் 🌟
+                        if (returnedItem && returnedItem.status === 'REFUNDED') {
+                            // ரிட்டர்ன் முழுமையாக முடிந்து 'REFUNDED' ஆன பிறகுதான் Returned Amount-ல் மைனஸ் ஆக சேரும்
+                            returnedRev += o.totalAmount;
+                        } else if (o.status === 'DELIVERED') {
+                            // டெலிவரி ஆன ஆர்டர்கள் (ரிட்டர்ன் பெண்டிங்கில் இருந்தாலும்) Total Revenue-ல் இருக்கும்
+                            totalRev += o.totalAmount;
+                        }
+                    });
                     
                     document.getElementById('totalOrders').innerText = orders.length;
                     document.getElementById('totalRevenue').innerText = `₹${totalRev.toLocaleString('en-IN')}`;
+                    document.getElementById('returnedAmount').innerText = `-₹${returnedRev.toLocaleString('en-IN')}`; 
 
+                    // Recent Orders List (UI update)
                     const recentList = document.getElementById('recentOrdersList');
                     recentList.innerHTML = "";
                     const recentOrders = [...orders].reverse().slice(0, 5);
@@ -242,8 +252,8 @@
                         });
                     }
 
-                    // 🌟 Real Dynamic Chart Rendering 🌟
-                    renderChart(orders);
+                    // Pass both orders and returnsList to Graph function
+                    renderChart(orders, returnsList);
                 }
 
             } catch (error) {
@@ -251,11 +261,10 @@
             }
         }
 
-        // 🌟 REAL GRAPH GENERATOR 🌟
-        function renderChart(orders) {
+        // 🌟 REAL GRAPH GENERATOR (Delivered & Non-Refunded items only) 🌟
+        function renderChart(orders, returnsList) {
             const ctx = document.getElementById('salesChart').getContext('2d');
             
-            // 1. கடந்த 7 நாட்களின் தேதிகளை உருவாக்குதல் (எ.கா: "12 Mar", "13 Mar")
             const labels = [];
             const data = [0, 0, 0, 0, 0, 0, 0];
 
@@ -265,23 +274,24 @@
                 labels.push(d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
             }
 
-            // 2. Orders-ல் உள்ள தேதியை வைத்து கணக்கிடுதல்
             orders.forEach(order => {
-                // Spring Boot-ல் 'createdAt' அல்லது 'orderDate' என்ற field இருந்தால் அது எடுக்கப்படும். 
-                // அப்படி ஏதும் இல்லை என்றால் இன்றைய கணக்கில் (Today) சேர்த்துக்கொள்ளும்.
-                const orderDateStr = order.createdAt || order.orderDate || order.date;
+                const returnedItem = returnsList.find(r => r.orderId == order.id);
                 
-                if (orderDateStr) {
-                    const orderDate = new Date(orderDateStr);
-                    const formattedDate = orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                // 🌟 Chart-ல் Delivered மற்றும் முழுமையாக Refund ஆகாத ஆர்டர்களை மட்டும் காட்டுகிறோம் 🌟
+                if (order.status === 'DELIVERED' && (!returnedItem || returnedItem.status !== 'REFUNDED')) {
+                    const orderDateStr = order.createdAt || order.orderDate || order.date;
                     
-                    const index = labels.indexOf(formattedDate);
-                    if (index !== -1) {
-                        data[index] += order.totalAmount || 0; // அந்த நாளின் கணக்கில் கூட்டப்படும்
+                    if (orderDateStr) {
+                        const orderDate = new Date(orderDateStr);
+                        const formattedDate = orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                        
+                        const index = labels.indexOf(formattedDate);
+                        if (index !== -1) {
+                            data[index] += order.totalAmount || 0; 
+                        }
+                    } else {
+                        data[6] += order.totalAmount || 0; 
                     }
-                } else {
-                    // Date இல்லையென்றால், இன்றைய கணக்கில் (Index 6) கூட்டிவிடும்.
-                    data[6] += order.totalAmount || 0; 
                 }
             });
 
@@ -294,13 +304,13 @@
                     datasets: [{
                         label: 'Revenue (₹)',
                         data: data,
-                        borderColor: '#3c6ce7',
-                        backgroundColor: 'rgba(60, 108, 231, 0.1)',
+                        borderColor: '#16a34a', 
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
                         borderWidth: 3,
                         tension: 0.4, 
                         fill: true,
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#3c6ce7',
+                        pointBorderColor: '#16a34a',
                         pointBorderWidth: 2,
                         pointRadius: 4,
                     }]
