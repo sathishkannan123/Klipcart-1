@@ -136,7 +136,7 @@
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                     <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-slate-500">list_alt</span> All Products
+                        <span class="material-symbols-outlined text-slate-500">list_alt</span> All Products List
                     </h2>
                 </div>
                 <div class="overflow-x-auto">
@@ -156,8 +156,120 @@
                 </div>
             </div>
 
-            <div id="dynamicCategoryTables" class="flex flex-col gap-8 mt-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden category-section">
+                <div class="px-6 py-4 border-b border-blue-100 bg-blue-50/50 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-600">smartphone</span> Mobiles
+                    </h2>
                 </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-white border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                                <th class="p-4 font-semibold w-20">ID</th>
+                                <th class="p-4 font-semibold">Product Info</th>
+                                <th class="p-4 font-semibold">Category</th>
+                                <th class="p-4 font-semibold">Price</th>
+                                <th class="p-4 font-semibold">Stock Status</th>
+                                <th class="p-4 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mobileTable" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden category-section">
+                <div class="px-6 py-4 border-b border-purple-100 bg-purple-50/50 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-purple-600">laptop_mac</span> Laptops
+                    </h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-white border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                                <th class="p-4 font-semibold w-20">ID</th>
+                                <th class="p-4 font-semibold">Product Info</th>
+                                <th class="p-4 font-semibold">Category</th>
+                                <th class="p-4 font-semibold">Price</th>
+                                <th class="p-4 font-semibold">Stock Status</th>
+                                <th class="p-4 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="laptopTable" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden category-section">
+                <div class="px-6 py-4 border-b border-orange-100 bg-orange-50/50 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-orange-600">watch</span> Watches
+                    </h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-white border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                                <th class="p-4 font-semibold w-20">ID</th>
+                                <th class="p-4 font-semibold">Product Info</th>
+                                <th class="p-4 font-semibold">Category</th>
+                                <th class="p-4 font-semibold">Price</th>
+                                <th class="p-4 font-semibold">Stock Status</th>
+                                <th class="p-4 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="watchTable" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden category-section">
+                <div class="px-6 py-4 border-b border-pink-100 bg-pink-50/50 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-pink-600">headphones</span> Earphones
+                    </h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-white border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                                <th class="p-4 font-semibold w-20">ID</th>
+                                <th class="p-4 font-semibold">Product Info</th>
+                                <th class="p-4 font-semibold">Category</th>
+                                <th class="p-4 font-semibold">Price</th>
+                                <th class="p-4 font-semibold">Stock Status</th>
+                                <th class="p-4 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="earphoneTable" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden category-section">
+                <div class="px-6 py-4 border-b border-teal-100 bg-teal-50/50 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-teal-600">tv</span> Televisions
+                    </h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-white border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                                <th class="p-4 font-semibold w-20">ID</th>
+                                <th class="p-4 font-semibold">Product Info</th>
+                                <th class="p-4 font-semibold">Category</th>
+                                <th class="p-4 font-semibold">Price</th>
+                                <th class="p-4 font-semibold">Stock Status</th>
+                                <th class="p-4 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tvTable" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
 
         </div>
     </main>
@@ -171,6 +283,7 @@
             window.location.href = "admin-login.html";
         }
 
+        // HTML Generator for Rows
         function generateRowHtml(product) {
             let stockBadge = `<span class="bg-green-100 text-green-800 border border-green-200 px-3 py-1 rounded-full text-xs font-bold">${product.stock} In Stock</span>`;
             if(product.stock < 10 && product.stock > 0) {
@@ -212,85 +325,66 @@
                 const products = await response.json();
 
                 const tableAll = document.getElementById("productTable");
-                const dynamicContainer = document.getElementById("dynamicCategoryTables");
-                
+                const tableMobile = document.getElementById("mobileTable");
+                const tableLaptop = document.getElementById("laptopTable");
+                const tableWatch = document.getElementById("watchTable");
+                const tableEarphone = document.getElementById("earphoneTable");
+                const tableTv = document.getElementById("tvTable");
+
                 tableAll.innerHTML = "";
-                dynamicContainer.innerHTML = "";
+                tableMobile.innerHTML = "";
+                tableLaptop.innerHTML = "";
+                tableWatch.innerHTML = "";
+                tableEarphone.innerHTML = "";
+                tableTv.innerHTML = "";
 
                 let totalStock = 0;
                 let lowStockCount = 0;
+                let counts = { mobile: 0, laptop: 0, watch: 0, earphone: 0, tv: 0 };
 
                 if(products.length === 0) {
-                    tableAll.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-medium">No products available in the inventory.</td></tr>`;
+                    const emptyRow = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-medium">No products available.</td></tr>`;
+                    tableAll.innerHTML = emptyRow;
+                    tableMobile.innerHTML = emptyRow;
+                    tableLaptop.innerHTML = emptyRow;
+                    tableWatch.innerHTML = emptyRow;
+                    tableEarphone.innerHTML = emptyRow;
+                    tableTv.innerHTML = emptyRow;
+                    
                     document.getElementById("totalProducts").innerText = "0";
                     document.getElementById("totalStock").innerText = "0";
                     document.getElementById("lowStock").innerText = "0";
                     return;
                 }
 
-                // Reverse for latest products first
-                products.reverse();
-
-                // 1. Populate 'All Products' Table
-                products.forEach(product => {
+                products.reverse().forEach(product => {
                     totalStock += product.stock;
                     if(product.stock < 10 && product.stock > 0) lowStockCount++;
                     
-                    tableAll.innerHTML += generateRowHtml(product);
+                    const rowHtml = generateRowHtml(product);
+                    
+                    // 1. Add to "All Products"
+                    tableAll.innerHTML += rowHtml;
+
+                    // 2. Add to Specific Category Tables
+                    const cat = (product.category || "").toLowerCase();
+                    
+                    if (cat.includes('mobile')) { tableMobile.innerHTML += rowHtml; counts.mobile++; }
+                    else if (cat.includes('laptop')) { tableLaptop.innerHTML += rowHtml; counts.laptop++; }
+                    else if (cat.includes('watch')) { tableWatch.innerHTML += rowHtml; counts.watch++; }
+                    else if (cat.includes('earphone')) { tableEarphone.innerHTML += rowHtml; counts.earphone++; }
+                    else if (cat.includes('tv') || cat.includes('television')) { tableTv.innerHTML += rowHtml; counts.tv++; }
                 });
 
-                // 2. Automatically Group and Create Category Tables
-                const uniqueCategories = [...new Set(products.map(p => p.category ? p.category.toLowerCase() : 'uncategorized'))];
+                // Show empty messages if category is empty
+                const emptyMsg = (catName) => `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-medium">No ${catName} products found.</td></tr>`;
+                if(counts.mobile === 0) tableMobile.innerHTML = emptyMsg("Mobile");
+                if(counts.laptop === 0) tableLaptop.innerHTML = emptyMsg("Laptop");
+                if(counts.watch === 0) tableWatch.innerHTML = emptyMsg("Watch");
+                if(counts.earphone === 0) tableEarphone.innerHTML = emptyMsg("Earphone");
+                if(counts.tv === 0) tableTv.innerHTML = emptyMsg("TV");
 
-                uniqueCategories.forEach(cat => {
-                    const catProducts = products.filter(p => (p.category || 'uncategorized').toLowerCase() === cat);
-                    
-                    // Assign specific icons based on category name automatically
-                    let icon = "category";
-                    if(cat.includes('mobile')) icon = "smartphone";
-                    else if(cat.includes('laptop')) icon = "laptop_mac";
-                    else if(cat.includes('watch')) icon = "watch";
-                    else if(cat.includes('earphone')) icon = "headphones";
-                    else if(cat.includes('tv')) icon = "tv";
-                    else if(cat.includes('tablet')) icon = "tablet_mac";
-                    
-                    // Generate colors based on category length to make it colorful
-                    const colorClasses = ['blue', 'purple', 'green', 'orange', 'pink', 'teal'];
-                    const colorIdx = cat.length % colorClasses.length;
-                    const cTheme = colorClasses[colorIdx];
-
-                    let catTableHtml = `
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden category-section">
-                            <div class="px-6 py-4 border-b border-${cTheme}-100 bg-${cTheme}-50/50 flex justify-between items-center">
-                                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2 capitalize">
-                                    <span class="material-symbols-outlined text-${cTheme}-600">${icon}</span> ${cat}
-                                </h2>
-                                <span class="bg-${cTheme}-100 text-${cTheme}-700 text-xs font-bold px-2.5 py-1 rounded-lg">${catProducts.length} Items</span>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse whitespace-nowrap">
-                                    <thead>
-                                        <tr class="bg-white border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
-                                            <th class="p-4 font-semibold w-20">ID</th>
-                                            <th class="p-4 font-semibold">Product Info</th>
-                                            <th class="p-4 font-semibold">Category</th>
-                                            <th class="p-4 font-semibold">Price</th>
-                                            <th class="p-4 font-semibold">Stock Status</th>
-                                            <th class="p-4 font-semibold text-center">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100 bg-white">
-                                        ${catProducts.map(p => generateRowHtml(p)).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                    
-                    dynamicContainer.innerHTML += catTableHtml;
-                });
-
-                // Update Stats Cards
+                // Update Stats
                 document.getElementById("totalProducts").innerText = products.length;
                 document.getElementById("totalStock").innerText = totalStock;
                 document.getElementById("lowStock").innerText = lowStockCount;
@@ -315,36 +409,20 @@
             }
         }
 
-        // 🌟 GLOBAL SEARCH (Filters dynamically created categories as well) 🌟
+        // 🌟 GLOBAL SEARCH (Filters seamlessly across ALL tables) 🌟
         function searchTable() {
             let input = document.getElementById("searchInput").value.toLowerCase();
-            
-            // Search inside All Products Table
-            let allProdRows = document.querySelectorAll("#productTable .product-row");
-            allProdRows.forEach(row => {
+            let rows = document.querySelectorAll(".product-row");
+
+            rows.forEach(row => {
                 let name = row.querySelector(".product-name").innerText.toLowerCase();
                 let category = row.querySelector(".product-category").innerText.toLowerCase();
-                row.style.display = (name.includes(input) || category.includes(input)) ? "" : "none";
-            });
-
-            // Search inside Dynamic Category Tables
-            let catSections = document.querySelectorAll(".category-section");
-            catSections.forEach(section => {
-                let catRows = section.querySelectorAll(".product-row");
-                let hasVisibleRow = false;
                 
-                catRows.forEach(row => {
-                    let name = row.querySelector(".product-name").innerText.toLowerCase();
-                    if (name.includes(input)) {
-                        row.style.display = "";
-                        hasVisibleRow = true;
-                    } else {
-                        row.style.display = "none";
-                    }
-                });
-
-                // Hide the entire category box if no products match the search inside it
-                section.style.display = hasVisibleRow ? "" : "none";
+                if (name.includes(input) || category.includes(input)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
             });
         }
 
