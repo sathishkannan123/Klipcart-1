@@ -476,7 +476,7 @@
     function toggleDropdown() { document.getElementById("accountDropdown").classList.toggle("hidden"); }
     
     // 🌟 Logout Logic 🌟
-    async function customerLogout() {
+    async function logout() {
             const email = localStorage.getItem("customerEmail");
             
             
@@ -490,11 +490,11 @@
                 }
             }
 
-            
+           
             localStorage.removeItem("customerEmail");
             localStorage.removeItem("customerName");
             localStorage.removeItem("klipcart_token");
-            window.location.href = "index.html";
+            window.location.href = "login.html";
         }
 
     document.addEventListener("click", function (event) {

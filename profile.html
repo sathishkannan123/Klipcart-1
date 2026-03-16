@@ -262,14 +262,13 @@
                 alert("❌ Error connecting to the server!");
             });
         }
-
-        async function customerLogout() {
+        async function logout() {
             const email = localStorage.getItem("customerEmail");
             
-            
+            // Backend-க்கு Logout Request அனுப்புதல்
             if(email) {
                 try {
-                    await fetch(`https://klipcart.onrender.com/logout?email=${email}`, { 
+                    await fetch(`https://klipcart.onrender.com/api/auth/logout?email=${email}`, { 
                         method: 'POST' 
                     });
                 } catch(e) {
@@ -277,12 +276,16 @@
                 }
             }
 
-            
+            localStorage.clear();
+            localStorage.removeItem("klipcart_cart");
+            localStorage.removeItem("klipcart_wishlist");
             localStorage.removeItem("customerEmail");
             localStorage.removeItem("customerName");
             localStorage.removeItem("klipcart_token");
             window.location.href = "index.html";
         }
+
+        
     </script>
 </body>
 </html>
