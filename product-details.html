@@ -497,13 +497,11 @@
                 }
             }
         }
-
         window.markAsRead = function(type) {
             if (window.liveDataCounts && window.liveDataCounts[type] !== undefined) {
                 localStorage.setItem(`admin_known_${type}_count`, window.liveDataCounts[type]);
             }
         };
-
         window.onload = () => {
             loadProducts();
             syncAdminBadges();
