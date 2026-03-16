@@ -476,16 +476,15 @@
     function toggleDropdown() { document.getElementById("accountDropdown").classList.toggle("hidden"); }
     
         // 🌟 NEW LOGOUT FUNCTION (Redirects to Home Page) 🌟
+        // 🌟 NEW LOGOUT FUNCTION (Redirects to Home Page) 🌟
         async function logout(event) {
-            if(event) event.preventDefault(); // If it's an <a> tag, prevent default routing
+            if(event) event.preventDefault(); // If it's an <a> tag or form submit, prevent default
 
             const email = localStorage.getItem("customerEmail");
             
             if (email) {
                 try {
-                    
                     const logoutUrl = `https://klipcart.onrender.com/logout?email=${email}`;
-                    
                     const response = await fetch(logoutUrl, { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
@@ -503,9 +502,10 @@
             localStorage.removeItem("customerEmail");
             localStorage.removeItem("customerName");
             localStorage.removeItem("klipcart_token");
+            localStorage.removeItem("userId"); 
             
             
-            window.location.href = "index.html"; 
+            window.location.reload(); 
         }
     
 

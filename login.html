@@ -192,23 +192,22 @@
                     body: JSON.stringify({ email: emailInput, password: passwordInput })
                 });
 
-                const userDataText = await response.text(); 
+                if (response.ok) {
+                    // Backend அனுப்பும் JSON டேட்டாவை பிரித்தெடுத்தல்
+                    const data = await response.json(); 
 
-                if (response.ok && userDataText) {
-                    
-                    const user = JSON.parse(userDataText); 
-                    const userName = user.fullName || emailInput.split('@')[0]; 
+                    // 🌟 மிக முக்கியமான மாற்றம்: Token, Email, ID அனைத்தையும் சரியாக சேமிக்கிறோம்! 🌟
+                    localStorage.setItem("klipcart_token", data.token); // JWT Token
+                    localStorage.setItem("userId", data.id); // User ID
+                    localStorage.setItem("customerEmail", data.email); // User Email
+                    localStorage.setItem("customerName", data.fullName || emailInput.split('@')[0]); // User Name
 
-                    // 🌟 மிக முக்கியமான மாற்றம்: இங்கேதான் userId-ஐ சேமிக்கிறோம்! 🌟
-                    localStorage.setItem("userId", user.id); 
-                    localStorage.setItem("customerEmail", emailInput);
-                    localStorage.setItem("customerName", userName);
-
-                    alert("Login Successful! Welcome back, " + userName);
+                    alert("Login Successful! Welcome back, " + (data.fullName || "User"));
                     window.location.href = "index.html"; 
 
                 } else {
-                    alert("❌ Invalid Email or Password! Please check and try again.");
+                    const errorText = await response.text();
+                    alert("❌ " + (errorText || "Invalid Email or Password! Please check and try again."));
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
