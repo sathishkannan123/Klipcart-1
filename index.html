@@ -75,7 +75,7 @@
                                     <span class="material-symbols-outlined text-[18px]">shopping_bag</span> My Orders
                                 </a>
                                 <div class="h-px bg-slate-100 my-1"></div>
-                                <button onclick="logout()" class="w-full text-left px-5 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-3 focus:outline-none">
+                                <button onclick="logout(event)" class="w-full text-left px-5 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-3 focus:outline-none">
                                     <span class="material-symbols-outlined text-[18px]">logout</span> Logout
                                 </button>
                             </div>
@@ -475,27 +475,39 @@
 
     function toggleDropdown() { document.getElementById("accountDropdown").classList.toggle("hidden"); }
     
-    // 🌟 Logout Logic 🌟
-    async function logout() {
+        // 🌟 NEW LOGOUT FUNCTION (Redirects to Home Page) 🌟
+        async function logout(event) {
+            if(event) event.preventDefault(); // If it's an <a> tag, prevent default routing
+
             const email = localStorage.getItem("customerEmail");
             
-            
-            if(email) {
+            if (email) {
                 try {
-                    await fetch(`https://klipcart.onrender.com/logout?email=${email}`, { 
-                        method: 'POST' 
+                    
+                    const logoutUrl = `https://klipcart.onrender.com/logout?email=${email}`;
+                    
+                    const response = await fetch(logoutUrl, { 
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
                     });
+                    
+                    if(!response.ok) {
+                        console.log("Failed to update offline status in DB");
+                    }
                 } catch(e) {
-                    console.log("Logout API error:", e);
+                    console.log("Logout API Network Error:", e);
                 }
             }
 
-           
+            
             localStorage.removeItem("customerEmail");
             localStorage.removeItem("customerName");
             localStorage.removeItem("klipcart_token");
-            window.location.href = "login.html";
+            
+            
+            window.location.href = "index.html"; 
         }
+    
 
     document.addEventListener("click", function (event) {
         const dropdown = document.getElementById("accountDropdown");
