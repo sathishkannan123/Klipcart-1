@@ -475,37 +475,38 @@
 
     function toggleDropdown() { document.getElementById("accountDropdown").classList.toggle("hidden"); }
     
-        // 🌟 NEW LOGOUT FUNCTION (Redirects to Home Page) 🌟
-        // 🌟 NEW LOGOUT FUNCTION (Redirects to Home Page) 🌟
+        
+        
+        // 🌟 FIXED LOGOUT FUNCTION 🌟
         async function logout(event) {
-            if(event) event.preventDefault(); // If it's an <a> tag or form submit, prevent default
+            if(event) event.preventDefault(); 
 
             const email = localStorage.getItem("customerEmail");
+            const token = localStorage.getItem("klipcart_token"); 
             
             if (email) {
                 try {
-                    const logoutUrl = `https://klipcart.onrender.com/logout?email=${email}`;
-                    const response = await fetch(logoutUrl, { 
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
+
+                    const logoutUrl = `https://klipcart.onrender.com/user-logout?email=${email}`;
                     
-                    if(!response.ok) {
-                        console.log("Failed to update offline status in DB");
-                    }
+                    await fetch(logoutUrl, { 
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` 
+                        }
+                    });
                 } catch(e) {
                     console.log("Logout API Network Error:", e);
                 }
             }
 
-            
             localStorage.removeItem("customerEmail");
             localStorage.removeItem("customerName");
             localStorage.removeItem("klipcart_token");
             localStorage.removeItem("userId"); 
             
-            
-            window.location.reload(); 
+            window.location.href = "index.html"; 
         }
     
 
