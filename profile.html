@@ -263,13 +263,13 @@
             });
         }
 
-        async function logout() {
+        async function customerLogout() {
             const email = localStorage.getItem("customerEmail");
             
             
             if(email) {
                 try {
-                    await fetch(`https://klipcart.onrender.com/api/logout?email=${email}`, { 
+                    await fetch(`https://klipcart.onrender.com/logout?email=${email}`, { 
                         method: 'POST' 
                     });
                 } catch(e) {
@@ -281,7 +281,7 @@
             localStorage.removeItem("customerEmail");
             localStorage.removeItem("customerName");
             localStorage.removeItem("klipcart_token");
-            window.location.href = "login.html";
+            window.location.href = "index.html";
         }
     </script>
 </body>
